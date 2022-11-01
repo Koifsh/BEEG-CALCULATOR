@@ -7,12 +7,7 @@ from threading import Thread
 import pandas
 import matplotlib.pyplot as plt
 
-def isfloat(num):
-    try:
-        float(num)
-        return True
-    except ValueError:
-        return False
+
 
 class Screen(QMainWindow):
     def __init__(self):
@@ -63,14 +58,84 @@ class Screen(QMainWindow):
     def clearscreen(self):
         tempwidgets = dict(self.widgets)
         for key,value in self.widgets.items():
-            value.hide()
+            value.deleteLater()
             del tempwidgets[key]
+        self.widgets = tempwidgets
+        print(self.widgets)
     
     def closeEvent(self, event) :
         self.data.to_csv("data.csv",mode="w",index=False)
         event.accept()
 
+class DataFrameEditor(QWidget):
+    def __init__(self):
+        self.data = window.data
+        super().__init__()
+        self.resize(1200,800)
+        mainLayout = QVBoxLayout()
+        self.setWindowTitle("Data")
+        self.setStyleSheet("background: #161219;")
+        self.table = Table(self.data)
+        self.setLayout(mainLayout)
+        mainLayout.addWidget(self.table)
+        buttonexport = Button(self,"Save edited changes")
+        mainLayout.addWidget(buttonexport)
+        buttonrevert = Button(self,"Revert changes")
+        mainLayout.addWidget(buttonrevert)
+        
 
+class Table(QTableWidget):
+    def __init__(self, data):
+        self.tabledata = data
+        super().__init__()
+        rowcount, columncount = self.tabledata.shape
+        self.setColumnCount(columncount)
+        self.setRowCount(rowcount)
+        self.setHorizontalHeaderLabels(("Weight","Height","Hours"))
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.setStyleSheet('''
+                           QTableView {
+                           color: white;
+                           gridline-color: #737373;
+                           font-size:35px;
+                           border-style:none;
+                            border-bottom: 1px solid #fffff8;
+                            border-right: 1px solid #fffff8;
+                           background-color: #161219
+                           
+                           }
+                           QHeaderView::section {
+                            color: white;
+                            background-color: #161219;
+                            padding: 4px;
+                            border: 1px solid #fffff8;
+                            font-size: 14pt;
+                            }
+                            QTableView::item:focus{
+                            color: #d97218;
+                            border: 2px solid #d97218;
+                            background-color: #161219;
+                            }
+                            QTableWidget QTableCornerButton::section {
+                            background-color: #161219;
+                            border: 1px solid #fffff8;
+                            }
+                            ''')
+        
+        for i in range(self.rowCount()):
+            for j in range(self.columnCount()):
+                self.setItem(i,j, QTableWidgetItem(str(self.tabledata.iloc[i,j])))
+        
+        self.cellChanged[int,int].connect(self.updateDF)
+    
+    def updateDF(self,row,column):
+        text = self.item(row,column).text()
+        if isfloat(text) or text.isnumeric():
+            self.tabledata.iloc[row,column] = float(text)
+        else:
+            self.item(row,column).setText(str(window.data.iloc[row,column]))
+                
 class LineEdit(QLineEdit):
     def __init__(self,window,text,pos,size=(200,50)):
         super().__init__(window)
@@ -105,14 +170,15 @@ class Text(QLabel):
         self.setFixedSize(size*len(text),size*3)    
 
 class Button(QPushButton):
-    def __init__(self,window, text,pos,size = (200,70)):
+    def __init__(self,window, text,pos=None,size = (200,70)):
         super().__init__(text,window)
         self.win = window
         self.cooldownstate = False
         self.message = text
-        
-        self.move(*pos)
-        self.setFixedSize(*size)
+        if pos is not None:
+            self.move(*pos)
+        if size is not None:
+            self.setFixedSize(*size)
         self.setStyleSheet(
         #setting variable margins
         '''
@@ -153,7 +219,18 @@ class Button(QPushButton):
                         self.notice(0.5,"Submitted successfully","Submit")
                     else:
                         self.notice(0.5,"Values entered incorrectly","Submit")
-                        
+                
+                case "Show Full Data":
+                    window.datatable = DataFrameEditor()
+                    window.datatable.show()
+                
+                case "Save edited changes":
+                    window.data = window.datatable.data
+                    window.datascreen()
+                
+                case "Revert changes":
+                    window.datatable.__init__()
+                    
     def notice(self, sleeptime, message, orgmessage):
         def noticethread():
             self.cooldownstate = True
@@ -162,7 +239,13 @@ class Button(QPushButton):
             self.setText(orgmessage)
             self.cooldownstate = False
         Thread(target=noticethread, daemon = True).start()
-        
+
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = Screen()
