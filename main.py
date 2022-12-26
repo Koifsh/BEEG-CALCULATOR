@@ -1,28 +1,31 @@
+# import libraries
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import sys,pandas
 from tools import *
 
-class Screen(QMainWindow):
+
+class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
     def __init__(self):
-        super(Screen,self).__init__()
+        super(Screen,self).__init__() # initialize the widget
         self.widgets = {}
-        self.setGeometry(300,300,600,600)
+        self.setGeometry(300,300,600,600) # set the position and the size
         self.setWindowTitle("BEEEEGGG calculator")
-        self.setStyleSheet("background: #161219;")
-        try :
-            self.data = pandas.read_csv("data.csv")
+        self.setStyleSheet("background: #161219;")  # set the colour
+        try : # reads data about users and if no users are found create a new data file
+            self.data = pandas.read_csv("users.csv")
             self.startscreen()
-        except FileNotFoundError:
+        except FileNotFoundError: # creates a new file if it doesn't exist
             frame = dict(username=[],password=[])
             self.data = pandas.DataFrame(frame)
-            self.data.to_csv("data.csv",mode="w",index=False)
+            self.data.to_csv("users.csv",mode="w",index=False)
             self.startscreen()
             
         
     def startscreen(self):
         self.clearscreen()
+        # Creates a blank screen and then loads 3 widgets onto the screen - this is the first screen the user will see
         self.widgets = {
             "title": Text(self,"Beeg Calculator",(225,10),15),
             "login": Button(self,"Login",(200,60),func="loginscreen"),
@@ -31,13 +34,16 @@ class Screen(QMainWindow):
         self.update()
     
     def mainscreen(self):
+        # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
         self.widgets = {
             "title": Text(self,"Beeg Calculator",(225,10),15),
+            "logout": Button(self,"Logout",(10,10),(100,70),"startscreen"),
             "data": Button(self,"Show Data",(200,60),func="datascreen")
         }
         self.update()
     
     def createuserscreen(self):
+        # This is the create user screen with 5 widgets about creating users
         self.clearscreen()
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func="startscreen"),
@@ -46,14 +52,12 @@ class Screen(QMainWindow):
             "password": LineEdit(self,"Password",(200,120)),
             "submit": Button(self,"Submit",(200,180),func="submitcreateuser")
         }
-        self.widgets["password"].setEchoMode(QLineEdit.Password)
+        #Sets the preview of the password field to dots for better security against shouldering
+        self.widgets["password"].setEchoMode(QLineEdit.Password) 
         self.update()
         
-    def datatable(self):
-        self.datatable = DataFrameEditor(self)
-        self.datatable.show()
     
-    def loginscreen(self):
+    def loginscreen(self): #This is the login screen with 5 widgets about logging into the saved users
         self.clearscreen()
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func="startscreen"),
@@ -62,95 +66,64 @@ class Screen(QMainWindow):
             "password": LineEdit(self,"Password",(200,120)),
             "submit": Button(self,"Submit",(200,180),func="submitlogin")
         }
+        #Sets the preview of the password field to dots for better security against shouldering
         self.widgets["password"].setEchoMode(QLineEdit.Password)
         self.update()
     
-    def datascreen(self):
-        self.clearscreen()
-        previousweight = self.data["weight"].iloc[-1]
-        previousheight = self.data["height"].iloc[-1]
-        previoushours = self.data["hours"].iloc[-1]
-        self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func="startscreen"),
-            "title": Text(self,"Data",(225,10),15),
-            "weightbox" : LineEdit(self,"Weight",(200,70)),
-            "heightbox" : LineEdit(self,"Height",(200,130)),
-            "hoursbox" : LineEdit(self,"Hours",(200,190)),
-            "submit" : Button(self,"Submit",(200,250),(200,50),func="saveresults"),
-            "weights" : Text(self,f"Previous weight = {previousweight} ",(10,300),15),
-            "heights" : Text(self,f"Previous height = {previousheight}",(10,320),15),
-            "hours" : Text(self,f"Previous hours = {previoushours} ",(10,340),15),
-            "fulldata" : Button(self,"Show Full Data",(470,10),(120,50),func="tablescreen")
-        }
-        self.update()
         
-    def update(self):
+    def update(self):#This updates the different frames so that each widget can be seen
         for key, widget in self.widgets.items():
-            print(key)
+            print(key) # To check what widgets have been loaded
             widget.show()
         print()
         
-    def clearscreen(self):
+    def clearscreen(self):# This clears the screen and ensures that it has been deleted from the widget dictionary
         print("screen cleared")
-        for value in self.widgets.values():
-            value.setParent(None)
+        for key, value in self.widgets.items():
+            value.setParent(None) # deletes the widget from the screen
+            del self.widgets[key] # deletes it from the widget dictionary
     
     def extrafuncs(self,butt,name):
+        #This is extra functions of buttons that aren't changing frames so that I won't need to switch to the other 
+        # script every time I need to create a new button
         match name:
-            case "saveresults":
-                editboxes = [self.widgets[i].text() for i in ["weightbox","heightbox","hoursbox"]]
-                if all((i.isnumeric() or isfloat(i)) for i in editboxes):
-                    newrow = pandas.DataFrame.from_records([{"weight" : float(editboxes[0]),
-                                                                "height" : float(editboxes[1]),
-                                                                "hours" : float(editboxes[2])}])
-                    self.data = pandas.concat([self.data,newrow])
-                    self.data.reset_index(drop=True,inplace=True)
-                    self.datascreen()
-                    butt.notice(0.5,"Submitted successfully","Submit")
-                else:
-                    butt.notice(0.5,"Values entered incorrectly","Submit")
-                    
-            case "submitlogin":
-                    editboxes = [self.widgets[i].text() for i in ["username","password"]]
-                    if all(i == "" for i in editboxes):
+            case "submitlogin": # controls what the submit button does in the login screen
+                
+                    editboxes = [self.widgets[i].text() for i in ["username","password"]] # creates a list with the text of each box
+                    if all(i == "" for i in editboxes): # If every box is empty
                         butt.notice(0.5,"Boxes aren't filled","Submit")
                     else:
-                        if editboxes[0] not in set(self.data["username"]):
+                        if editboxes[0] not in set(self.data["username"]): # Checks if the username does not exists
                             butt.notice(0.5,"Username does not exist","Submit")
                             print(self.data["username"])
                         else:
-                            print(self.data.loc[self.data["username"] == editboxes[0],"password"].values[0])
-                            if self.data.loc[self.data["username"] == editboxes[0],"password"].values[0] != editboxes[1]:
+                            if self.data.loc[self.data["username"] == editboxes[0],"password"].values[0] != editboxes[1]: #Checks if the password doesnt match
                                 butt.notice(0.5,"Password incorrect","Submit")
                             else:
-                                #placeholder
                                 self.clearscreen()
                                 self.mainscreen()
                                 
-            case "submitcreateuser":
-                editboxes = [self.widgets[i].text() for i in ["username","password"]]
-                if all(i == "" for i in editboxes):
+            case "submitcreateuser": # controls what the submit button does in the create user screen
+                editboxes = [self.widgets[i].text() for i in ["username","password"]] # creates a list with the text of each box
+                if all(i == "" for i in editboxes):# If every box is empty
                     butt.notice(0.5,"Boxes aren't filled","Submit")
                 else:
-                    if editboxes[0] in set(self.data):
+                    if editboxes[0] in set(self.data): # If the user already exists
                         butt.notice(0.5,"Username already exists","Submit")
                     else:
+                        # Appends the new user and password into the dataframe
                         newrow = pandas.DataFrame.from_records([{"username":editboxes[0],"password":editboxes[1]}])
                         self.data = pandas.concat([self.data, newrow])
-                        self.data.reset_index(drop=True)
+                        self.data.reset_index(drop=True) # Resets indexes
                         butt.notice(0.5,"User created","Submit")
-                        self.data.to_csv("data.csv",mode="w",index=False)
+                        self.data.to_csv("users.csv",mode="w",index=False) # Saves to the the file
             
-            case _:
+            case _: # Helps to catch logic errors regarding function names
                 print("function does not exist")
 
 
-
-
-            
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = Screen()
+if __name__ == "__main__": # So that the script can't be executed indirectly
+    app = QApplication(sys.argv) # Initializes the application
+    window = Screen() # initializes the window by instantiating the screen class
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec_()) # destroys the program to stop it running after the program has been closed.
