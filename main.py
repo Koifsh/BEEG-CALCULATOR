@@ -9,7 +9,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def __init__(self):
         super(Screen,self).__init__() # initialize the widget
         self.widgets = {}
-        self.admin=False
+        self.admin = False
         self.setGeometry(300,300,600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
         self.setStyleSheet("background: #161219;")  # set the colour
@@ -18,7 +18,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.userdata = pandas.read_csv("users.csv")
             self.startscreen()
         except FileNotFoundError: # creates a new file if it doesn't exist
-            frame = dict(username=["admin"],password=["adminpassword"])
+            frame = dict(username=["admin"],password=["adminpassword"],loggedin=[False])
             self.userdata = pandas.DataFrame(frame)
             self.userdata.to_csv("users.csv",mode="w",index=False)
             self.startscreen()
@@ -79,8 +79,10 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "title": Text(self,"Login",(225,10),15),
             "username": LineEdit(self,"Username",(200,60)),
             "password": LineEdit(self,"Password",(200,120)),
-            "showpassword": Button(self,"Show",(410,120),(60,50),func="showpassword"),
-            "submit": Button(self,"Submit",(200,180),func="submitlogin")
+            "showpassword": Button(self,"Show",(410,125),(50,40),func="showpassword",text_size=12),
+            "RememberMe": CheckBox(self,"Remember me",(195,180)),
+            "submit": Button(self,"Submit",(200,240),func="submitlogin")
+            
         }
         #Sets the preview of the password field to dots for better security against shouldering
         self.showpass = False
@@ -131,6 +133,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                             else:
                                 if username == "admin":
                                     self.admin = True
+                                self.username = username
                                 self.clearscreen()
                                 self.mainscreen()
                                 
@@ -143,7 +146,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                         butt.notice(0.5,"Username already exists","Submit")
                     else:
                         # Appends the new user and password into the dataframe
-                        newrow = pandas.DataFrame.from_records([{"username":username,"password":password}])
+                        newrow = pandas.DataFrame.from_records([{"username":username,"password":password,"loggedin":False}])
                         self.userdata = pandas.concat([self.userdata, newrow])
                         self.userdata.reset_index(drop=True) # Resets indexes
                         butt.notice(0.5,"User created","Submit")
@@ -174,7 +177,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                     else:
                         newrow = pandas.DataFrame.from_records([{"excercise":[workout,"cheese"],"musclehit":muscle}])
                         self.excercises = pandas.concat([self.excercises,newrow])
-                        self.excercises.reset_index(drop=True)
+                        self.excercises.reset_index(drop=True,inplace=True)
                         butt.notice(0.5,"Workout added","Add")
                         self.excercises.to_csv("excercises.csv",mode="w",index=False)
                         for i in ["workoutname","bodypart"]:
@@ -183,6 +186,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                         self.widgets["workoutname"] = LineEdit(self,"Workout Name",(150,100),(300,50))
                         self.widgets["bodypart"] = LineEdit(self,"Muscle Group Hit",(150,160),(300,50))
                         self.update()
+                        print(self.excercises.loc[:,"excercise"])
                         
                 
             case _: # Helps to catch logic errors regarding function names

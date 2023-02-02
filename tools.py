@@ -4,10 +4,9 @@ from PyQt5.QtCore import *
 import time
 from threading import Thread
 
-
 class Button(QPushButton):
     #Here I have taken window as an argument to stop cyclical imports
-    def __init__(self,window,text,pos=None,size = (200,70),func="notentered"):
+    def __init__(self,window,text,pos=None,size = (200,70),func="notentered",text_size=15):
         super().__init__(text, window)
         self.win = window  # setting the window as a class variable
         self.cooldownstate = False
@@ -21,10 +20,9 @@ class Button(QPushButton):
         QPushButton {
         border: 4px solid #737373;
         color: white;
-        font-family: shanti;
-        font-size: 15px;
+        font-family: shanti;'''+
+        f"font-size: {text_size}px;" +'''
         border-radius: 4px;
-        padding: 15px 0;
         margin-top: 0px}
         
         QPushButton::hover{
@@ -121,3 +119,31 @@ class Text(QLabel):
             margin-top: 20px'''
             +"}")
         self.setFixedSize(size*len(text),size*3) # adjusts the size of the widget based on text size.
+
+class CheckBox(QCheckBox):
+    def __init__(self,window,text,pos):
+        super().__init__(text,window)
+        self.move(*pos)
+        self.setFixedSize(200,42)
+        self.setStyleSheet(
+            """
+        QCheckBox{
+            font-family: 'shanti';
+            color: white;
+        }
+            QCheckBox::indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 12px;
+            border-style: solid;
+            border-width: 3px;
+            border-color: #737373;
+        }
+        QCheckBox::indicator:checked {
+            background-color: #737373;}
+            
+        QCheckBox::indicator:hover{
+            border-color: #575757;
+            }
+        """)
+        

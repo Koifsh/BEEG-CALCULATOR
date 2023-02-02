@@ -1,4 +1,3 @@
-username,password
-admin,adminpassword
-User,password
-Charlie,barnet
+username,password,loggedin
+admin,adminpassword,False
+
