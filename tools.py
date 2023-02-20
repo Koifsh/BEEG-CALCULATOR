@@ -6,7 +6,7 @@ from threading import Thread
 
 class Button(QPushButton):
     #Here I have taken window as an argument to stop cyclical imports
-    def __init__(self,window,text,pos=None,size = (200,70),func="notentered",text_size=15):
+    def __init__(self,window,text,pos=None,size = (200,70),func=None,text_size=15):
         super().__init__(text, window)
         self.win = window  # setting the window as a class variable
         self.cooldownstate = False
@@ -29,59 +29,18 @@ class Button(QPushButton):
             background: #737373;
         }
         ''')
-        self.clicked.connect(self.buttfunctions)
-        if self.func == "deleteexcercise":
-                    self.setStyleSheet(
-        #setting variable margins
-                    '''
-                    QPushButton {
-                    border: 4px solid #BA0001;
-                    color: white;
-                    font-family: shanti;
-                    font-size: 15px;
-                    border-radius: 4px;
-                    padding: 15px 0;
-                    margin-top: 0px}
-                    
-                    QPushButton::hover{
-                        background: #BA0001;
-                    }
-                    ''')
-    def buttfunctions(self):
-        #Matching buttons to the screens it should take the user to.
-        if not self.cooldownstate:
-            match self.func:
-                case "datascreen":
-                    self.win.datascreen()
-                case "startscreen":
-                    self.win.startscreen()
-                case "tablescreen":
-                    self.win.datatable()          
-                case "loginscreen":
-                    self.win.loginscreen()
-                case "addworkoutscreen":
-                    self.win.addworkoutscreen()
-                case "mainscreen":
-                    self.win.clearscreen()
-                    self.win.mainscreen()
-                case "addentryscreen":
-                    self.win.addentryscreen()
-                case "notentered":
-                    print("Button function must be entered")
-                case "createuserscreen":
-                    self.win.createuserscreen()
-                case _:
-                    # Functions that are not transition buttons are managed in the main script 
-                    # to avoid back and forth between different files
-                    self.win.extrafuncs(self,self.func)
+        if self.func == None:
+            print("Function not Entered")
+        else:
+            self.clicked.connect(self.func)
 
     def notice(self, sleeptime, message, orgmessage): # Gives the user a brief idea of what the button has just done
         def noticefunc():
-            self.cooldownstate = True#This variable makes sure that the button wont do anything while the message is displayed
+            self.setEnabled(False)#This variable makes sure that the button wont do anything while the message is displayed
             self.setText(message)
             time.sleep(sleeptime)
             self.setText(orgmessage)
-            self.cooldownstate = False
+            self.setEnabled(True)
          #daemon thread allows the rest of the screen to function while the message is being displayed
         self.noticethread = Thread(target=noticefunc, daemon = True)
         self.noticethread.start()
