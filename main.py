@@ -16,7 +16,12 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.excercises = pandas.read_csv("excercises.csv")
         try : # reads data about users and if no users are found create a new data file
             self.userdata = pandas.read_csv("users.csv")
-            self.startscreen()
+            if (True in set(self.userdata["loggedin"])):
+                self.username = list(self.userdata.loc[self.userdata["loggedin"]==True,"username"])[0]
+                print(self.username)
+                self.mainscreen()
+            else:
+                self.startscreen()
         except FileNotFoundError: # creates a new file if it doesn't exist
             frame = dict(username=["admin"],password=["adminpassword"],loggedin=[False])
             self.userdata = pandas.DataFrame(frame)
@@ -36,12 +41,14 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
     def mainscreen(self):
         # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
+        if self.username == "admin":
+            self.admin = True
+            print("admin")
         self.widgets = {
             "title": Text(self,"Fitness Calculator",(225,10),15),
             "logout": Button(self,"Logout",(10,10),(100,70),self.logout),
             "addworkout": Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
         }
-        print(self.admin)
         if self.admin:
             self.widgets["addentry"] = Button(self,"Add entry", (490,10),(100,70),func=self.addentryscreen)
         self.update()
@@ -90,6 +97,8 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets["password"].setEchoMode(QLineEdit.Password)
         self.update()
     
+    
+    
     def addworkoutscreen(self):
         self.clearscreen()
         
@@ -133,13 +142,14 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                 if self.userdata.loc[self.userdata["username"] == username,"password"].values[0] != password: #Checks if the password doesnt match
                     self.widgets["submit"].notice(0.5,"Password incorrect","Submit")
                 else:
-                    if username == "admin":
-                        self.admin = True
+                    
                     self.userdata.loc[self.userdata["username"]==username,"loggedin"] = self.widgets["RememberMe"].isChecked()
+                    self.userdata.to_csv("users.csv",mode="w",index=False)
                     self.username = username
                     self.clearscreen()
                     self.mainscreen()
-                        
+        
+    
     def submitcreateuser(self): # controls what the submit button does in the create user screen
         username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
         if all(i == "" for i in (username,password)):# If every box is empty
@@ -189,9 +199,10 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                 self.widgets["workoutname"] = LineEdit(self,"Workout Name",(150,100),(300,50))
                 self.widgets["bodypart"] = LineEdit(self,"Muscle Group Hit",(150,160),(300,50))
                 self.update()
-    
+        
     def logout(self):
         self.userdata.loc[self.userdata["username"]==self.username,"loggedin"] = False
+        self.admin = False
         self.startscreen()
     #endregion BUTTONFUNCTIONS ------------------------------
 
