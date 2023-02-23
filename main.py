@@ -9,7 +9,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def __init__(self):
         super().__init__() # initialize the widget
         self.widgets = {}
-        self.admin = False
         self.setGeometry(300,300,600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
         self.setStyleSheet("background: #161219;")  # set the colour
@@ -27,8 +26,19 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.userdata = pandas.DataFrame(frame)
             self.userdata.to_csv("users.csv",mode="w",index=False)
             self.startscreen()
-            
+    
+
+
     #region - SCREENS -----------------------------------------
+    def screen(func):#This updates the different frames so that each widget can be seen
+        def wrapper(self):
+            func(self)
+            
+            self.update()
+        return wrapper
+    
+    
+    @ screen
     def startscreen(self):
         self.clearscreen()
         # Creates a blank screen and then loads 3 widgets onto the screen - this is the first screen the user will see
@@ -37,33 +47,18 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "login": Button(self,"Login",(200,60),func=self.loginscreen),
             "createuser" : Button(self,"Create new user",(200,140),func=self.createuserscreen)
         }
-        self.update()
     
+    @screen
     def mainscreen(self):
         # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
-        if self.username == "admin":
-            self.admin = True
-            print("admin")
+        self.clearscreen()
         self.widgets = {
             "title": Text(self,"Fitness Calculator",(225,10),15),
             "logout": Button(self,"Logout",(10,10),(100,70),self.logout),
             "addworkout": Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
         }
-        if self.admin:
-            self.widgets["addentry"] = Button(self,"Add entry", (490,10),(100,70),func=self.addentryscreen)
-        self.update()
     
-    def addentryscreen(self):
-        self.clearscreen()
-        self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title": Text(self,"Add entry",(225,10),15),
-            "workoutname": LineEdit(self,"Workout Name",(150,100),(300,50)),
-            "bodypart": LineEdit(self,"Muscle Group Hit",(150,160),(300,50)),
-            "addworkout": Button(self,"Add",(150,220),(300,50),func=self.createnewexcercise)
-        }
-        self.update()
-    
+    @screen
     def createuserscreen(self):
         # This is the create user screen with 5 widgets about creating users
         self.clearscreen()
@@ -78,8 +73,8 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         #Sets the preview of the password field to dots for better security against shouldering
         self.showpass = False
         self.widgets["password"].setEchoMode(QLineEdit.Password) 
-        self.update()
-        
+    
+    @screen
     def loginscreen(self): #This is the login screen with 5 widgets about logging into the saved users
         self.clearscreen()
         self.widgets = {
@@ -95,29 +90,22 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         #Sets the preview of the password field to dots for better security against shouldering
         self.showpass = False
         self.widgets["password"].setEchoMode(QLineEdit.Password)
-        self.update()
     
-    
-    
+    @screen
     def addworkoutscreen(self):
         self.clearscreen()
-        
         self.buttnum = 0
         self.widgets= {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title": Text(self,"Add excercise",(225,10),15),
             "addexcercise" : Button(self,"Add excercise",(200,60),func=self.addexcercise),
         }
-
-        
-        self.update()
-       
-    def update(self):#This updates the different frames so that each widget can be seen
+    def update(self):
         for key, widget in self.widgets.items():
             print(key) # To check what widgets have been loaded
             widget.show()
         print()
-        
+    
     def clearscreen(self):# This clears the screen and ensures that it has been deleted from the widget dictionary
         print("screen cleared")
         for value in self.widgets.values():
@@ -149,7 +137,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                     self.clearscreen()
                     self.mainscreen()
         
-    
     def submitcreateuser(self): # controls what the submit button does in the create user screen
         username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
         if all(i == "" for i in (username,password)):# If every box is empty
@@ -176,11 +163,12 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
     def addexcercise(self):
         self.buttnum += 1
+        
         self.widgets["addexcercise"].move(200,60+60*self.buttnum)
         self.widgets[f"delete{self.buttnum}"] = Button(self,"Delete",(10,10+60*self.buttnum),(100,50),func="deleteexcercise")
         self.update()
     
-    def createnewexcercise(self): # 1:Legs 2: Chest 3: Bicep 4: Tricep 5:Back 6:Shoulders 7:Lats 8: Core 
+    def createnewexcercise(self): # 1:Legs 2: Chest 3: Bicep 4: Tricep 5:Back 6:Shoulders 7:Lats 8: Core 9: Forearm 0: Full Body
         workout,muscle = (self.widgets[i].text() for i in ["workoutname","bodypart"])
         if all(i == "" for i in (workout,muscle)):# If every box is empty
             self.widgets["addworkout"].notice(0.5,"Boxes aren't filled","Submit")
@@ -188,7 +176,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             if workout in set(self.excercises): # If the user already exists
                 self.widgets["addworkout"].notice(0.5,"Workout already exists","Submit")
             else:
-                newrow = pandas.DataFrame.from_records([{"excercise":[workout,"cheese"],"musclehit":muscle}])
+                newrow = pandas.DataFrame.from_records([{"excercise":workout,"musclehit":muscle}])
                 self.excercises = pandas.concat([self.excercises,newrow])
                 self.excercises.reset_index(drop=True,inplace=True)
                 self.widgets["addworkout"].notice(0.5,"Workout added","Add")
@@ -202,7 +190,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         
     def logout(self):
         self.userdata.loc[self.userdata["username"]==self.username,"loggedin"] = False
-        self.admin = False
+        self.userdata.to_csv("users.csv",mode="w",index=False)
         self.startscreen()
     #endregion BUTTONFUNCTIONS ------------------------------
 
