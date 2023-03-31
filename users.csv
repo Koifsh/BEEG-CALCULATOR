@@ -1,4 +1,5 @@
 username,password,loggedin
-admin,adminpassword,True
+admin,adminpassword,False
 fingy,123,False
 toby,maguire,False
+archie,miller1,False

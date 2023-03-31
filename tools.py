@@ -71,10 +71,10 @@ class Text(QLabel):
         self.setAlignment(Qt.AlignVCenter) # changes the alignment to the center of the widget
         self.setStyleSheet( # sets the style of the text
             "*{"+
-            f'''color: white;
-            font-family: 'shanti';
+            f'''
+            font-family: 'consolas';
             font-size: {size}px;
-
+            color: white;
             margin-top: 20px'''
             +"}")
         self.setFixedSize(size*len(text),size*3) # adjusts the size of the widget based on text size.

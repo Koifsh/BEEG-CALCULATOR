@@ -6,10 +6,11 @@ import sys,pandas
 from tools import *
 
 class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
+    
     def __init__(self):
         super().__init__() # initialize the widget
         self.widgets = {}
-        self.setGeometry(300,300,600,600) # set the position and the size
+        self.setFixedSize(600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
         self.setStyleSheet("background: #161219;")  # set the colour
         self.excercises = pandas.read_csv("excercises.csv")
@@ -26,8 +27,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.userdata = pandas.DataFrame(frame)
             self.userdata.to_csv("users.csv",mode="w",index=False)
             self.startscreen()
-    
-
 
     #region - SCREENS -----------------------------------------
     def screen(func):#This updates the different frames so that each widget can be seen
@@ -43,7 +42,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.clearscreen()
         # Creates a blank screen and then loads 3 widgets onto the screen - this is the first screen the user will see
         self.widgets = {
-            "title": Text(self,"Fitness Calculator",(225,10),15),
+            "title": Text(self,"Fitness Calculator",(200,10),20),
             "login": Button(self,"Login",(200,60),func=self.loginscreen),
             "createuser" : Button(self,"Create new user",(200,140),func=self.createuserscreen)
         }
@@ -53,7 +52,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
         self.clearscreen()
         self.widgets = {
-            "title": Text(self,"Fitness Calculator",(225,10),15),
+            "title": Text(self,"Fitness Calculator",(200,10),20),
             "logout": Button(self,"Logout",(10,10),(100,70),self.logout),
             "addworkout": Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
         }
@@ -64,7 +63,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.clearscreen()
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.startscreen),
-            "title": Text(self,"Create New User",(225,10),15),
+            "title": Text(self,"Create New User",(225,10),20),
             "username": LineEdit(self,"Username",(200,60)),
             "password": LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,120),(60,50),func=self.showpassword),
@@ -79,7 +78,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.clearscreen()
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.startscreen),
-            "title": Text(self,"Login",(225,10),15),
+            "title": Text(self,"Login",(225,10),20),
             "username": LineEdit(self,"Username",(200,60)),
             "password": LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,125),(50,40),func=self.showpassword,text_size=12),
@@ -97,9 +96,20 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.buttnum = 0
         self.widgets= {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title": Text(self,"Add excercise",(225,10),15),
-            "addexcercise" : Button(self,"Add excercise",(200,60),func=self.addexcercise),
+            "title": Text(self,"Add excercise",(225,10),20),
+            "workoutbox": QGroupBox(self)
         }
+        self.widgets["workoutbox"].move(10,100)
+        self.widgets["workoutbox"].setFixedSize(580,490)
+        self.widgets["workoutbox"].setStyleSheet("""
+            QGroupBox{
+                border: 4px solid #737373;
+                color: white;
+                border-radius: 5px;
+                margin-top: 0px}
+            }
+            """)
+    
     def update(self):
         for key, widget in self.widgets.items():
             print(key) # To check what widgets have been loaded
@@ -161,12 +171,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.widgets["password"].setEchoMode(QLineEdit.Password)
             self.widgets["showpassword"].setText("Show")
     
-    def addexcercise(self):
-        self.buttnum += 1
-        
-        self.widgets["addexcercise"].move(200,60+60*self.buttnum)
-        self.widgets[f"delete{self.buttnum}"] = Button(self,"Delete",(10,10+60*self.buttnum),(100,50),func="deleteexcercise")
-        self.update()
     
     def createnewexcercise(self): # 1:Legs 2: Chest 3: Bicep 4: Tricep 5:Back 6:Shoulders 7:Lats 8: Core 9: Forearm 0: Full Body
         workout,muscle = (self.widgets[i].text() for i in ["workoutname","bodypart"])
