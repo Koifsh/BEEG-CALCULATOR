@@ -9,7 +9,6 @@ class Button(QPushButton):
     def __init__(self,window,text,pos=None,size = (200,70),func=None,text_size=15):
         super().__init__(text, window)
         self.win = window  # setting the window as a class variable
-        self.cooldownstate = False
         self.func = func
         if pos is not None: #Move the button if the position argument is specified
             self.move(*pos)
@@ -64,6 +63,8 @@ class LineEdit(QLineEdit):
             '''
         )
 
+
+        
 class Text(QLabel):
     def __init__(self,window,text,pos,size):
         super().__init__(text,window)
@@ -105,4 +106,52 @@ class CheckBox(QCheckBox):
             border-color: #575757;
             }
         """)
+
+class Scrollbox:
+    def __init__(self,window,pos,size):
+        self.workoutbox = QGroupBox(window)
+        self.scroll = QScrollArea(window)
+        self.layout = QFormLayout()
+        self.workoutbox.setStyleSheet("QGroupBox{border: none;}")
+        self.scroll.move(*pos)
+        self.scroll.setFixedSize(*size)
+        self.scroll.setStyleSheet("""
+        QScrollArea{
+            border: 4px solid #737373;
+            color: black;
+            border-radius: 4px;
+            margin-top: 0px;
+        }""")
+        self.scroll.verticalScrollBar().setStyleSheet("""
+    QScrollBar:vertical{
+        background-color: #2A2929;
+        width: 15px;
+        border:none;
+        margin: 15px 3px 15px 3px;
+        border: 1px transparent #2A2929;
+        border-radius: 4px;}
+    QScrollBar::handle:vertical{
+        background: #d96207;
+        min-height: 5px;
+        border-radius: 4px;}
+    QScrollBar::sub-line:vertical{height:0px;}
+    QScrollBar::add-line:vertical{height: 0px;}
+    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical{background: none;}
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical{background: none;}""")
+        self.scrollwidglist = []
         
+        for i in range(30):
+            self.scrollwidglist.append(QLabel('mylabel'))
+            self.layout.addRow(self.scrollwidglist[i])
+        self.workoutbox.setLayout(self.layout)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(self.workoutbox)
+        
+    def show(self):
+        self.workoutbox.show()
+        self.scroll.show()
+        
+    def setParent(self,_):
+        self.workoutbox.setParent(None)
+        self.scroll.setParent(None)
+    

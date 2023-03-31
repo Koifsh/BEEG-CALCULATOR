@@ -6,7 +6,6 @@ import sys,pandas
 from tools import *
 
 class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
-    
     def __init__(self):
         super().__init__() # initialize the widget
         self.widgets = {}
@@ -34,7 +33,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             func(self)
             self.update()
         return wrapper
-    
     
     @ screen
     def startscreen(self):
@@ -96,44 +94,12 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets= {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title": Text(self,"Add excercise",(225,0),20),
-            "scroll" : QScrollArea(self),
-            "workoutbox": QGroupBox(self),
+            "workoutbox": Scrollbox(self,(10,100),(580,490)),
         }
-        self.widgets["scroll"].move(10,100)
-        self.widgets["scroll"].setFixedSize(580,490)
-        self.widgets["scroll"].verticalScrollBar().setStyleSheet("""
-    QScrollBar:vertical
-    {
-        background-color: none;
-    }
 
-    QScrollBar::handle:vertical
-    {
-        background-color: blue;      /* #605F5F; */
-        min-width: 5px;
-        border-radius: 4px;
     
-    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical
-    {
-        background: none;
-    }
-
-    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
-    {
-        background: none;
-    }
-    }
-        """)
-        labellist = []
-        combolist = []
-        myform = QFormLayout()
-        for i in range(30):
-            labellist.append(QLabel('mylabel'))
-            combolist.append(QComboBox())
-            myform.addRow(labellist[i],combolist[i])
-        self.widgets["workoutbox"].setLayout(myform)
-        self.widgets["scroll"].setWidgetResizable(True)
-        self.widgets["scroll"].setWidget(self.widgets["workoutbox"])
+    def addscrollwidget(self):
+        self.widgets["workoutbox"].scrollwidglist.append([Button(self)])
     
     def update(self):
         for key, widget in self.widgets.items():
