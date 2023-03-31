@@ -32,7 +32,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def screen(func):#This updates the different frames so that each widget can be seen
         def wrapper(self):
             func(self)
-            
             self.update()
         return wrapper
     
@@ -42,7 +41,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.clearscreen()
         # Creates a blank screen and then loads 3 widgets onto the screen - this is the first screen the user will see
         self.widgets = {
-            "title": Text(self,"Fitness Calculator",(200,10),20),
+            "title": Text(self,"Fitness Calculator",(200,0),20),
             "login": Button(self,"Login",(200,60),func=self.loginscreen),
             "createuser" : Button(self,"Create new user",(200,140),func=self.createuserscreen)
         }
@@ -52,7 +51,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
         self.clearscreen()
         self.widgets = {
-            "title": Text(self,"Fitness Calculator",(200,10),20),
+            "title": Text(self,"Main Menu",(200,0),20),
             "logout": Button(self,"Logout",(10,10),(100,70),self.logout),
             "addworkout": Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
         }
@@ -63,7 +62,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.clearscreen()
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.startscreen),
-            "title": Text(self,"Create New User",(225,10),20),
+            "title": Text(self,"Create New User",(225,0),20),
             "username": LineEdit(self,"Username",(200,60)),
             "password": LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,120),(60,50),func=self.showpassword),
@@ -78,7 +77,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.clearscreen()
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.startscreen),
-            "title": Text(self,"Login",(225,10),20),
+            "title": Text(self,"Login",(225,0),20),
             "username": LineEdit(self,"Username",(200,60)),
             "password": LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,125),(50,40),func=self.showpassword,text_size=12),
@@ -96,19 +95,45 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.buttnum = 0
         self.widgets= {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title": Text(self,"Add excercise",(225,10),20),
-            "workoutbox": QGroupBox(self)
+            "title": Text(self,"Add excercise",(225,0),20),
+            "scroll" : QScrollArea(self),
+            "workoutbox": QGroupBox(self),
         }
-        self.widgets["workoutbox"].move(10,100)
-        self.widgets["workoutbox"].setFixedSize(580,490)
-        self.widgets["workoutbox"].setStyleSheet("""
-            QGroupBox{
-                border: 4px solid #737373;
-                color: white;
-                border-radius: 5px;
-                margin-top: 0px}
-            }
-            """)
+        self.widgets["scroll"].move(10,100)
+        self.widgets["scroll"].setFixedSize(580,490)
+        self.widgets["scroll"].verticalScrollBar().setStyleSheet("""
+    QScrollBar:vertical
+    {
+        background-color: none;
+    }
+
+    QScrollBar::handle:vertical
+    {
+        background-color: blue;      /* #605F5F; */
+        min-width: 5px;
+        border-radius: 4px;
+    
+    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical
+    {
+        background: none;
+    }
+
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
+    {
+        background: none;
+    }
+    }
+        """)
+        labellist = []
+        combolist = []
+        myform = QFormLayout()
+        for i in range(30):
+            labellist.append(QLabel('mylabel'))
+            combolist.append(QComboBox())
+            myform.addRow(labellist[i],combolist[i])
+        self.widgets["workoutbox"].setLayout(myform)
+        self.widgets["scroll"].setWidgetResizable(True)
+        self.widgets["scroll"].setWidget(self.widgets["workoutbox"])
     
     def update(self):
         for key, widget in self.widgets.items():
