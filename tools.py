@@ -3,10 +3,11 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import time
 from threading import Thread
+from functools import partial
 
 class Button(QPushButton):
     #Here I have taken window as an argument to stop cyclical imports
-    def __init__(self,window,text,pos=None,size = (200,70),func=None,text_size=15):
+    def __init__(self,window,text,pos=None,size = (200,70),func=None,text_size=15,color="#737373"):
         super().__init__(text, window)
         self.win = window  # setting the window as a class variable
         self.func = func
@@ -16,8 +17,8 @@ class Button(QPushButton):
         self.setStyleSheet(
         #Setting the style of the button
         '''
-        QPushButton {
-        border: 4px solid #737373;
+        QPushButton {'''+
+        f"border: 4px solid {color};" +'''
         color: white;
         font-family: shanti;'''+
         f"font-size: {text_size}px;" +'''
@@ -30,6 +31,8 @@ class Button(QPushButton):
         ''')
         if self.func == None:
             print("Function not Entered")
+        elif self.func == window.deleterow:
+            pass
         else:
             self.clicked.connect(self.func)
 
@@ -62,8 +65,6 @@ class LineEdit(QLineEdit):
             margin-top: 0px}
             '''
         )
-
-
         
 class Text(QLabel):
     def __init__(self,window,text,pos,size):
@@ -107,6 +108,44 @@ class CheckBox(QCheckBox):
             }
         """)
 
+class dropdownbox(QComboBox):
+    def __init__(self,window,options=list):
+        super().__init__(window)
+        self.setFixedSize(300,50)
+        self.addItems(options)
+        self.setStyleSheet("""
+            QComboBox {
+            border: 4px solid #737373;
+            color: white;
+            font-family: shanti;
+            font-size: 15px;
+            border-radius: 4px;
+            margin-top: 0px}
+            
+            QListView {
+            border: 4px solid #737373;
+            border-radius: 4px;
+            color: white;
+            font-family: shanti;
+            }
+            QScrollBar:vertical{
+            background-color: #2A2929;
+            width: 15px;
+            border:none;
+            margin: 15px 3px 15px 3px;
+            border: 1px transparent #2A2929;
+            border-radius: 4px;}
+            QScrollBar::handle:vertical{
+                background: #d96207;
+                min-height: 5px;
+                border-radius: 4px;}
+            QScrollBar::sub-line:vertical{height:0px;}
+            QScrollBar::add-line:vertical{height: 0px;}
+            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical{background: none;}
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical{background: none;}
+                
+                           """)
+
 class Scrollbox:
     def __init__(self,window,pos,size):
         self.workoutbox = QGroupBox(window)
@@ -138,11 +177,11 @@ class Scrollbox:
     QScrollBar::add-line:vertical{height: 0px;}
     QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical{background: none;}
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical{background: none;}""")
-        self.scrollwidglist = []
-        
-        for i in range(30):
-            self.scrollwidglist.append(QLabel('mylabel'))
-            self.layout.addRow(self.scrollwidglist[i])
+        self.scrollwidglist = [[dropdownbox(window,window.excercises["excercise"]),Button(window,"Delete",None,(100,50),window.deleterow,color="#c91212")]]
+        self.scrollwidglist[0][1].clicked.connect(partial(window.deleterow,row=0))
+        self.layout.removeRow(0)
+        self.layout.addRow(*self.scrollwidglist[0])
+        self.layout.addRow(Button(window,"add row",None,(100,50),window.addrow))
         self.workoutbox.setLayout(self.layout)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.workoutbox)

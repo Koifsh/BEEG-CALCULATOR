@@ -1,5 +1,3 @@
-username,password,loggedin
-admin,adminpassword,True
-fingy,123,False
-toby,maguire,False
-archie,miller1,False
+UID,username,password,loggedin
+yoh81v5zx,admin,adminpassword,True
+2wiyl0pqx,cheese,balls,False
