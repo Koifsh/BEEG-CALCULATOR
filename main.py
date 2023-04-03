@@ -1,10 +1,8 @@
 # import libraries
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QMainWindow, QApplication)
 import sys,pandas
 from tools import *
-import random
+from random import sample
 
 class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
     def __init__(self):
@@ -158,9 +156,9 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             else:
                 # Appends the new user and password into the dataframe
                 samples = list("1234567890qwertyuiopasdfghjklzxcvbnm")
-                uid = "".join(random.sample(samples,9))
+                uid = "".join(sample(samples,9))
                 while uid in self.userdata["UID"]:
-                    uid = "".join(random.sample(samples,9))
+                    uid = "".join(sample(samples,9))
                 newrow = pandas.DataFrame.from_records([{"UID":uid,"username":username,"password":password,"loggedin":False}])
                 self.userdata = pandas.concat([self.userdata, newrow])
                 self.userdata.reset_index(inplace=True,drop=True) # Resets indexes

@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import time
+from time import sleep
 from threading import Thread
 from functools import partial
 
@@ -32,7 +32,7 @@ class Button(QPushButton):
         if self.func == None:
             print("Function not Entered")
         elif self.func == window.deleterow:
-            pass
+            return
         else:
             self.clicked.connect(self.func)
 
@@ -40,7 +40,7 @@ class Button(QPushButton):
         def noticefunc():
             self.setEnabled(False)#This variable makes sure that the button wont do anything while the message is displayed
             self.setText(message)
-            time.sleep(sleeptime)
+            sleep(sleeptime)
             self.setText(orgmessage)
             self.setEnabled(True)
          #daemon thread allows the rest of the screen to function while the message is being displayed
@@ -179,7 +179,6 @@ class Scrollbox:
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical{background: none;}""")
         self.scrollwidglist = [[dropdownbox(window,window.excercises["excercise"]),Button(window,"Delete",None,(100,50),window.deleterow,color="#c91212")]]
         self.scrollwidglist[0][1].clicked.connect(partial(window.deleterow,row=0))
-        self.layout.removeRow(0)
         self.layout.addRow(*self.scrollwidglist[0])
         self.layout.addRow(Button(window,"add row",None,(100,50),window.addrow))
         self.workoutbox.setLayout(self.layout)
