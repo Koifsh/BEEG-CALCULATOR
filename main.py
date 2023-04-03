@@ -12,12 +12,16 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.setWindowTitle("Fitness Calculator") # set the title
         self.setStyleSheet("background: #161219;")  # set the colour
         self.excercises = pandas.read_csv("excercises.csv")
+        self.workouts = pandas.read_csv("workouts.csv")
         try : # reads data about users and if no users are found create a new data file
             self.userdata = pandas.read_csv("users.csv")
             self.userdata.reset_index(inplace=True,drop=True) # reset the index
             if (True in set(self.userdata["loggedin"])):
                 self.username = list(self.userdata.loc[self.userdata["loggedin"]==True,"username"])[0]
+                self.uid = list(self.userdata.loc[self.userdata["loggedin"]==True,"UID"])[0]
                 print(self.username)
+                w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
+                print(w1)
                 self.mainscreen()
             else:
                 self.startscreen()
@@ -34,7 +38,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             func(self)
             self.update()
         return wrapper
-    
+
     @ screen
     def startscreen(self):
         # Creates a blank screen and then loads 3 widgets onto the screen - this is the first screen the user will see
@@ -90,7 +94,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title": Text(self,"Add excercise",(225,0),20),
             "workoutbox": Scrollbox(self,(10,100),(580,490)),
-            "saveworkout": Button(self,"Save workout",(470,10),(120,50),self.saveworkout)
+            "saveworkout": Button(self,"Save workout",(440,10),(150,50),self.saveworkout)
         }
 
     def update(self):
@@ -112,7 +116,15 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
     #region-BUTTONFUNCTIONS ---------------------------------
     def saveworkout(self):
-        pass
+        excercisesdone = [i[0].currentText() for i in self.widgets["workoutbox"].scrollwidglist]
+        if not all(i != "None" for i in excercisesdone):
+            self.widgets["saveworkout"].notice(0.5,"Delete Empty Boxes","Save Workout")
+        else:
+            newrow = pandas.DataFrame.from_records([{"UID":self.uid,"excercises":excercisesdone}])
+            self.workouts = pandas.concat([self.workouts, newrow])
+            self.workouts.reset_index(inplace=True,drop=True) # Resets indexes
+            self.widgets["saveworkout"].notice(0.5,"Workout Saved","Save Workout")
+            self.workouts.to_csv("workouts.csv",index=False) # Saves to the the file
     
     def addrow(self):
         index = len(self.widgets["workoutbox"].scrollwidglist)

@@ -31,9 +31,7 @@ class Button(QPushButton):
         ''')
         if self.func == None:
             print("Function not Entered")
-        elif self.func == window.deleterow:
-            return
-        else:
+        elif self.func != window.deleterow:
             self.clicked.connect(self.func)
 
     def notice(self, sleeptime, message, orgmessage): # Gives the user a brief idea of what the button has just done
