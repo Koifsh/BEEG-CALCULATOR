@@ -118,13 +118,17 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def saveworkout(self):
         excercisesdone = [i[0].currentText() for i in self.widgets["workoutbox"].scrollwidglist]
         if not all(i != "None" for i in excercisesdone):
-            self.widgets["saveworkout"].notice(0.5,"Delete Empty Boxes","Save Workout")
+            self.widgets["saveworkout"].notice(0.5,"Delete Empty Rows","Save Workout")
+        elif self.widgets["workoutbox"].scrollwidglist == []:
+            self.widgets["saveworkout"].notice(0.5,"Add a Row","Save Workout")
         else:
             newrow = pandas.DataFrame.from_records([{"UID":self.uid,"excercises":excercisesdone}])
             self.workouts = pandas.concat([self.workouts, newrow])
             self.workouts.reset_index(inplace=True,drop=True) # Resets indexes
             self.widgets["saveworkout"].notice(0.5,"Workout Saved","Save Workout")
-            self.workouts.to_csv("workouts.csv",index=False) # Saves to the the file
+            self.workouts.to_csv("workouts.csv",index=False) # Saves to the the file#
+            
+            # w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
     
     def addrow(self):
         index = len(self.widgets["workoutbox"].scrollwidglist)
