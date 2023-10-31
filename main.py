@@ -19,7 +19,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             if (True in set(self.userdata["loggedin"])):
                 self.username = list(self.userdata.loc[self.userdata["loggedin"]==True,"username"])[0]
                 self.uid = list(self.userdata.loc[self.userdata["loggedin"]==True,"UID"])[0]
-                print(self.username)
+                print(self.username, self.uid)
                 w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
                 print(w1)
                 self.mainscreen()
@@ -96,6 +96,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "workoutbox": Scrollbox(self,(10,100),(580,490)),
             "saveworkout": Button(self,"Save workout",(440,10),(150,50),self.saveworkout)
         }
+        self.addrow()
 
     def update(self):
         for key, widget in self.widgets.items():
@@ -145,20 +146,20 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
     
     def submitlogin(self): # controls what the submit button does in the login screen
-        username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
-        if all(i == "" for i in (username,password)): # If every box is empty
+        self.username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
+        if all(i == "" for i in (self.username,password)): # If every box is empty
             self.widgets["submit"].notice(0.5,"Boxes aren't filled","Submit")
         else:
-            if username not in set(self.userdata["username"]): # Checks if the username does not exists
+            if self.username not in set(self.userdata["username"]): # Checks if the username does not exists
                 self.widgets["submit"].notice(0.5,"Username does not exist","Submit")
             else:
-                if self.userdata.loc[self.userdata["username"] == username,"password"].values[0] != password: #Checks if the password doesnt match
+                if self.userdata.loc[self.userdata["username"] == self.username,"password"].values[0] != password: #Checks if the password doesnt match
                     self.widgets["submit"].notice(0.5,"Password incorrect","Submit")
                 else:
                     
-                    self.userdata.loc[self.userdata["username"]==username,"loggedin"] = self.widgets["RememberMe"].isChecked()
+                    self.userdata.loc[self.userdata["username"]==self.username,"loggedin"] = self.widgets["RememberMe"].isChecked()
                     self.userdata.to_csv("users.csv",mode="w",index=False)
-                    self.username = username
+                    self.uid = list(self.userdata.loc[self.userdata["username"]==self.username,"UID"])[0]
                     self.clearscreen()
                     self.mainscreen()
         
@@ -172,10 +173,10 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             else:
                 # Appends the new user and password into the dataframe
                 samples = list("1234567890qwertyuiopasdfghjklzxcvbnm")
-                uid = "".join(sample(samples,9))
-                while uid in self.userdata["UID"]:
-                    uid = "".join(sample(samples,9))
-                newrow = pandas.DataFrame.from_records([{"UID":uid,"username":username,"password":password,"loggedin":False}])
+                self.uid = "".join(list(sample(samples,1)[0] for _ in range(9)))
+                while self.uid in set(self.userdata["UID"]):
+                    self.uid = "".join(list(sample(samples,1)[0] for _ in range(9)))
+                newrow = pandas.DataFrame.from_records([{"UID":self.uid,"username":username,"password":password,"loggedin":False}])
                 self.userdata = pandas.concat([self.userdata, newrow])
                 self.userdata.reset_index(inplace=True,drop=True) # Resets indexes
                 self.widgets["submit"].notice(0.5,"User created","Submit")

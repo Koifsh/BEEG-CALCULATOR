@@ -1,9 +1,42 @@
+import typing
+from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from time import sleep
-from threading import Thread
-from functools import partial
+# from threading import Thread
+
+
+class Progressbar(QProgressBar):
+    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
+        super().__init__(window)
+        self.win = window
+        self.setMinimum(min)
+        self.setMaximum(max)
+        self.move(*pos)
+        self.setFixedSize(200,30)
+        self.setFormat(text)
+        self.setStyleSheet("QProgressBar {"
+                           f"background-color: {backgroundcolor};"
+                           "color: white;"
+                           "border-color: orange;"
+                           "border-radius: 2px;"
+                           "text-align: center; }"
+
+                           "QProgressBar::chunk {"
+                           "border-radius: 2px;"
+                           f"background-color: {barcolor};"+"}")
+        
+        self.timer = QTimer()
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.counter)
+        
+    def counter(self):
+        self.win.warmth -= 2
+        self.setValue(self.win.warmth)
+        self.update()
+        if self.win.warmth == 0:
+            self.win.close()
 
 class Button(QPushButton):
     #Here I have taken window as an argument to stop cyclical imports
@@ -31,19 +64,28 @@ class Button(QPushButton):
         ''')
         if self.func == None:
             print("Function not Entered")
-        elif self.func != window.deleterow:
-            self.clicked.connect(self.func)
-
+            return
+        
+        self.clicked.connect(self.func)
+    
     def notice(self, sleeptime, message, orgmessage): # Gives the user a brief idea of what the button has just done
-        def noticefunc():
-            self.setEnabled(False)#This variable makes sure that the button wont do anything while the message is displayed
-            self.setText(message)
-            sleep(sleeptime)
-            self.setText(orgmessage)
-            self.setEnabled(True)
          #daemon thread allows the rest of the screen to function while the message is being displayed
-        self.noticethread = Thread(target=noticefunc, daemon = True)
-        self.noticethread.start()
+        self.worker = Cooldown(sleeptime)
+        self.worker.start()
+        self.setEnabled(False)
+        self.setText(message)
+        self.worker.finished.connect(lambda: self.setEnabled(True))
+        self.worker.finished.connect(lambda: self.setText(orgmessage))
+
+class Cooldown(QThread):
+    def __init__(self, sleeptime) -> None:
+        super().__init__()
+        self.sleeptime = sleeptime
+    
+    def run(self):
+        sleep(self.sleeptime)
+        
+
 
 class LineEdit(QLineEdit):
     def __init__(self,window,text,pos,size=(200,50)):
@@ -175,9 +217,7 @@ class Scrollbox:
     QScrollBar::add-line:vertical{height: 0px;}
     QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical{background: none;}
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical{background: none;}""")
-        self.scrollwidglist = [[dropdownbox(window,window.excercises["excercise"]),Button(window,"Delete",None,(100,50),window.deleterow,color="#c91212")]]
-        self.scrollwidglist[0][1].clicked.connect(partial(window.deleterow,row=0))
-        self.layout.addRow(*self.scrollwidglist[0])
+        self.scrollwidglist = []
         self.layout.addRow(Button(window,"add row",None,(100,50),window.addrow))
         self.workoutbox.setLayout(self.layout)
         self.scroll.setWidgetResizable(True)
