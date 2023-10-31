@@ -200,4 +200,29 @@ class Scrollbox:
     def setParent(self,_):
         self.workoutbox.setParent(None)
         self.scroll.setParent(None)
-    
+
+
+
+class Progressbar(QProgressBar):
+    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
+        super().__init__(window)
+        self.win = window
+        self.setMinimum(min)
+        self.setMaximum(max)
+        self.move(*pos)
+        self.setFixedSize(200,30)
+        self.setFormat(text)
+        self.setStyleSheet("QProgressBar {"
+                           f"background-color: {backgroundcolor};"
+                           "color: white;"
+                           "border-color: orange;"
+                           "border-radius: 2px;"
+                           "text-align: center; }"
+
+                           "QProgressBar::chunk {"
+                           "border-radius: 2px;"
+                           f"background-color: {barcolor};"+"}")
+        
+        self.timer = QTimer()
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(quit)
