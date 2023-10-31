@@ -135,7 +135,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         index = len(self.widgets["workoutbox"].scrollwidglist)
         
         self.widgets["workoutbox"].scrollwidglist.append([dropdownbox(self,self.excercises["excercise"]),Button(self,"Delete",None,(100,50),self.deleterow,color="#c91212")])
-        self.widgets["workoutbox"].scrollwidglist[index][1].clicked.connect(partial(self.deleterow,row=index))
+        self.widgets["workoutbox"].scrollwidglist[index][1].clicked.connect(lambda : self.deleterow(row=index))
         self.widgets["workoutbox"].layout.removeRow(index)
         self.widgets["workoutbox"].layout.addRow(*self.widgets["workoutbox"].scrollwidglist[index])
         self.widgets["workoutbox"].layout.addRow(Button(self,"add row",None,(100,50),self.addrow))

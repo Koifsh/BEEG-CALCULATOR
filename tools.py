@@ -1,42 +1,12 @@
-import typing
-from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from time import sleep
+
+from PyQt5.QtWidgets import QWidget
 # from threading import Thread
 
 
-class Progressbar(QProgressBar):
-    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
-        super().__init__(window)
-        self.win = window
-        self.setMinimum(min)
-        self.setMaximum(max)
-        self.move(*pos)
-        self.setFixedSize(200,30)
-        self.setFormat(text)
-        self.setStyleSheet("QProgressBar {"
-                           f"background-color: {backgroundcolor};"
-                           "color: white;"
-                           "border-color: orange;"
-                           "border-radius: 2px;"
-                           "text-align: center; }"
-
-                           "QProgressBar::chunk {"
-                           "border-radius: 2px;"
-                           f"background-color: {barcolor};"+"}")
-        
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.counter)
-        
-    def counter(self):
-        self.win.warmth -= 2
-        self.setValue(self.win.warmth)
-        self.update()
-        if self.win.warmth == 0:
-            self.win.close()
 
 class Button(QPushButton):
     #Here I have taken window as an argument to stop cyclical imports
