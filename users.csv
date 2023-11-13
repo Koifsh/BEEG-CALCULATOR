@@ -1,7 +1,2 @@
-UID,username,password,loggedin
-yoh81v5zx,admin,adminpassword,False
-vck7jdani,waffle,0403,False
-xqpsue15g,kai,pyke,False
-npbzatkw0,Pat,phil,False
-jqy0v8ifv,Thomas Prior,battyboi,False
-t8y6cs7ns,farrowo,FireStorm,False
+UID,username,password,admin,loggedin
+1,kaipy,gromit,1,True

@@ -1,6 +1,6 @@
 # import libraries
 from PyQt5.QtWidgets import (QMainWindow, QApplication)
-import sys,pandas
+import sys,pandas, sqlalchemy
 from tools import *
 from random import sample
 
@@ -10,25 +10,21 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets = {}
         self.setFixedSize(600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
-        self.setStyleSheet("background: #161219;")  # set the colour
+  # set the colour
         self.excercises = pandas.read_csv("excercises.csv")
         self.workouts = pandas.read_csv("workouts.csv")
-        try : # reads data about users and if no users are found create a new data file
-            self.userdata = pandas.read_csv("users.csv")
-            self.userdata.reset_index(inplace=True,drop=True) # reset the index
-            if (True in set(self.userdata["loggedin"])):
-                self.username = list(self.userdata.loc[self.userdata["loggedin"]==True,"username"])[0]
-                self.uid = list(self.userdata.loc[self.userdata["loggedin"]==True,"UID"])[0]
-                print(self.username, self.uid)
-                w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
-                print(w1)
-                self.mainscreen()
-            else:
-                self.startscreen()
-        except FileNotFoundError: # creates a new file if it doesn't exist
-            frame = dict(username=["admin"],password=["adminpassword"],loggedin=[False])
-            self.userdata = pandas.DataFrame(frame)
-            self.userdata.to_csv("users.csv",mode="w",index=False)
+        # reads data about users and if no users are found create a new data file
+        self.engine = sqlalchemy.create_engine(url="mysql+pymysql://y12_23_kaiEPQ:%Sj58q5b7@77.68.35.85:3306/y12_23_kaiEPQ")
+        connection = self.engine.connect()
+        self.userdata = pandas.read_sql(sqlalchemy.text("-- sql\n SELECT * FROM users"),connection)
+        if (True in set(self.userdata["loggedin"])):
+            self.username = list(self.userdata.loc[self.userdata["loggedin"]==True,"username"])[0]
+            self.uid = list(self.userdata.loc[self.userdata["loggedin"]==True,"UID"])[0]
+            print(self.username, self.uid)
+            w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
+            print(w1)
+            self.mainscreen()
+        else:
             self.startscreen()
 
     #region - SCREENS -----------------------------------------
@@ -114,7 +110,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         # script every time I need to create a new button
     
     #endregion SCREENS -------------------------------------------
-    
     #region-BUTTONFUNCTIONS ---------------------------------
     def saveworkout(self):
         excercisesdone = [i[0].currentText() for i in self.widgets["workoutbox"].scrollwidglist]
@@ -134,8 +129,9 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def addrow(self):
         index = len(self.widgets["workoutbox"].scrollwidglist)
         
-        self.widgets["workoutbox"].scrollwidglist.append([dropdownbox(self,self.excercises["excercise"]),Button(self,"Delete",None,(100,50),self.deleterow,color="#c91212")])
+        self.widgets["workoutbox"].scrollwidglist.append([dropdownbox(self,self.excercises["excercise"]),Button(self,"Delete",None,(100,50),self.deleterow)])
         self.widgets["workoutbox"].scrollwidglist[index][1].clicked.connect(lambda : self.deleterow(row=index))
+        self.widgets["workoutbox"].scrollwidglist[index][1].setStyleSheet("QPushButton:hover{border: 4px solid red}")
         self.widgets["workoutbox"].layout.removeRow(index)
         self.widgets["workoutbox"].layout.addRow(*self.widgets["workoutbox"].scrollwidglist[index])
         self.widgets["workoutbox"].layout.addRow(Button(self,"add row",None,(100,50),self.addrow))
@@ -143,7 +139,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def deleterow(self,row):
         self.widgets["workoutbox"].layout.removeRow(row)
         self.widgets["workoutbox"].scrollwidglist.pop(row)
-    
     
     def submitlogin(self): # controls what the submit button does in the login screen
         self.username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
@@ -191,7 +186,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.widgets["password"].setEchoMode(QLineEdit.Password)
             self.widgets["showpassword"].setText("Show")
     
-    
     def createnewexcercise(self): # 1:Legs 2: Chest 3: Bicep 4: Tricep 5:Back 6:Shoulders 7:Lats 8: Core 9: Forearm 0: Full Body
         workout,muscle = (self.widgets[i].text() for i in ["workoutname","bodypart"])
         if all(i == "" for i in (workout,muscle)):# If every box is empty
@@ -216,12 +210,27 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.userdata.loc[self.userdata["username"]==self.username,"loggedin"] = False
         self.userdata.to_csv("users.csv",mode="w",index=False)
         self.startscreen()
+    
+        
     #endregion BUTTONFUNCTIONS ------------------------------
 
-
+style = {
+    "primcol" : "#3D3D3D",
+    "seccol" : "#F76D57",
+    "accent" : "#2A363B",
+    "bgcol" : "#1E1E1E",
+    "textcol" : "white",
+}
 
 if __name__ == "__main__": # So that the script can't be executed indirectly
     app = QApplication(sys.argv) # Initializes the application
-    window = Screen() # initializes the window by instantiating the screen class
+     # initializes the window by instantiating the screen class
+    with open("style.css", "r") as file:
+        stylesheet = str(file.read())
+    
+    for key, value in style.items():
+        stylesheet = stylesheet.replace(key, value)
+    app.setStyleSheet(stylesheet)
+    window = Screen()
     window.show()
-    sys.exit(app.exec_()) # destroys the program to stop it running after the program has been closed.
+    sys.exit(app.exec_()) # destroys the program to stop it running after the program has been bd.
