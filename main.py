@@ -186,10 +186,13 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                 self.widgets["submit"].notice(0.5,"Username already exists","Submit")
             else:
                 # Appends the new user and password into the dataframe
-                self.connection.execute("INSERT INTO users (username,password) VALUES ('%s','%s')" % (username,password) )
+                self.connection.execute(sqlalchemy.text("INSERT INTO users (username,password) VALUES ('%s','%s')" % (username,password) ))
                 self.username = username
                 self.widgets["submit"].notice(0.5,"User created","Submit")
+                self.connection.commit()
+                self.usernames.append(username)
                 self.loginscreen()
+                self.widgets["username"].setText(self.username)
 
     def showpassword(self):
         self.showpass = not self.showpass

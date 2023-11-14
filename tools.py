@@ -18,7 +18,6 @@ class Button(QPushButton):
             self.move(*pos)
         self.setFixedSize(*size)
         self.setFont(QFont("consolas", text_size))
-        #self.setStyleSheet("QPushButton:hover{background: accent;}")
         if func == None:
             print("Function not Entered")
             return
