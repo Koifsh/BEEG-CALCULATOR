@@ -2,7 +2,9 @@
 from PyQt5.QtWidgets import (QMainWindow, QApplication)
 import sys,pandas, sqlalchemy
 from tools import *
-from random import sample
+from random import choice
+import json
+
 
 class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
     def __init__(self):
@@ -10,19 +12,34 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets = {}
         self.setFixedSize(600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
-  # set the colour
+        self.engine = sqlalchemy.create_engine(url="mysql+pymysql://y12_23_kaiEPQ:%Sj58q5b7@77.68.35.85:3306/y12_23_kaiEPQ")
+        self.connection = self.engine.connect()
+        
+        try:
+            with open("data.json", "r") as data:
+                self.devicedata = json.load(data)
+        except FileNotFoundError:
+            deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
+            devicelist = list(self.connection.execute(sqlalchemy.text("SELECT deviceID FROM deviceToUser")))[0]
+            while deviceid in devicelist:
+                deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
+            self.devicedata = {"deviceid": deviceid}
+            with open("data.json","x") as data:
+                json.dump(self.devicedata, data)
+        
+        
+
         self.excercises = pandas.read_csv("excercises.csv")
         self.workouts = pandas.read_csv("workouts.csv")
+        
         # reads data about users and if no users are found create a new data file
-        self.engine = sqlalchemy.create_engine(url="mysql+pymysql://y12_23_kaiEPQ:%Sj58q5b7@77.68.35.85:3306/y12_23_kaiEPQ")
-        connection = self.engine.connect()
-        self.userdata = pandas.read_sql(sqlalchemy.text("-- sql\n SELECT * FROM users"),connection)
-        if (True in set(self.userdata["loggedin"])):
-            self.username = list(self.userdata.loc[self.userdata["loggedin"]==True,"username"])[0]
-            self.uid = list(self.userdata.loc[self.userdata["loggedin"]==True,"UID"])[0]
-            print(self.username, self.uid)
-            w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
-            print(w1)
+
+        self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata["deviceid"])))
+        self.usernames = list(map(lambda x: x[0],list(self.connection.execute(sqlalchemy.text("SELECT username FROM users")))))
+        if self.userID != []:
+            self.userID = self.userID[0][0]
+            _,self.username,_ = list(self.connection.execute(sqlalchemy.text("SELECT * FROM users WHERE userID = '%s'" % self.userID)))[0]
+            print(self.username, self.userID)
             self.mainscreen()
         else:
             self.startscreen()
@@ -141,41 +158,38 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets["workoutbox"].scrollwidglist.pop(row)
     
     def submitlogin(self): # controls what the submit button does in the login screen
-        self.username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
-        if all(i == "" for i in (self.username,password)): # If every box is empty
+        username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
+        if all(i == "" for i in (username,password)): # If every box is empty
             self.widgets["submit"].notice(0.5,"Boxes aren't filled","Submit")
-        else:
-            if self.username not in set(self.userdata["username"]): # Checks if the username does not exists
-                self.widgets["submit"].notice(0.5,"Username does not exist","Submit")
-            else:
-                if self.userdata.loc[self.userdata["username"] == self.username,"password"].values[0] != password: #Checks if the password doesnt match
-                    self.widgets["submit"].notice(0.5,"Password incorrect","Submit")
-                else:
-                    
-                    self.userdata.loc[self.userdata["username"]==self.username,"loggedin"] = self.widgets["RememberMe"].isChecked()
-                    self.userdata.to_csv("users.csv",mode="w",index=False)
-                    self.uid = list(self.userdata.loc[self.userdata["username"]==self.username,"UID"])[0]
-                    self.clearscreen()
-                    self.mainscreen()
+            return
+        
+        if username not in self.usernames: # Checks if the username does not exists
+            self.widgets["submit"].notice(0.5,"Username does not exist","Submit")
+            return
+
+        if list(self.connection.execute(sqlalchemy.text("SELECT password FROM users WHERE username = '%s'" % username)))[0][0] != password: #Checks if the password doesnt match
+            self.widgets["submit"].notice(0.5,"Password incorrect","Submit")
+            return
+        
+        self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM users WHERE username = '%s'" % username)))[0][0]
+        if self.widgets["RememberMe"].isChecked():
+            self.connection.execute(sqlalchemy.text("INSERT INTO deviceToUser (deviceID, userID) VALUES ('%s','%s')" % (self.devicedata['deviceid'],self.userID)))
+        self.username = username
+        self.mainscreen()
         
     def submitcreateuser(self): # controls what the submit button does in the create user screen
         username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
         if all(i == "" for i in (username,password)):# If every box is empty
             self.widgets["submit"].notice(0.5,"Boxes aren't filled","Submit")
         else:
-            if username in set(self.userdata["username"]): # If the user already exists
+            if username in self.usernames: # If the user already exists
                 self.widgets["submit"].notice(0.5,"Username already exists","Submit")
             else:
                 # Appends the new user and password into the dataframe
-                samples = list("1234567890qwertyuiopasdfghjklzxcvbnm")
-                self.uid = "".join(list(sample(samples,1)[0] for _ in range(9)))
-                while self.uid in set(self.userdata["UID"]):
-                    self.uid = "".join(list(sample(samples,1)[0] for _ in range(9)))
-                newrow = pandas.DataFrame.from_records([{"UID":self.uid,"username":username,"password":password,"loggedin":False}])
-                self.userdata = pandas.concat([self.userdata, newrow])
-                self.userdata.reset_index(inplace=True,drop=True) # Resets indexes
+                self.connection.execute("INSERT INTO users (username,password) VALUES ('%s','%s')" % (username,password) )
+                self.username = username
                 self.widgets["submit"].notice(0.5,"User created","Submit")
-                self.userdata.to_csv("users.csv",index=False) # Saves to the the file
+                self.loginscreen()
 
     def showpassword(self):
         self.showpass = not self.showpass
@@ -207,9 +221,12 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                 self.update()
         
     def logout(self):
-        self.userdata.loc[self.userdata["username"]==self.username,"loggedin"] = False
-        self.userdata.to_csv("users.csv",mode="w",index=False)
+        self.connection.execute(sqlalchemy.text("DELETE FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata['deviceid']))
         self.startscreen()
+        
+    def closeEvent(self, event):
+        self.connection.commit()
+        super(QMainWindow, self).closeEvent(event)
     
         
     #endregion BUTTONFUNCTIONS ------------------------------
