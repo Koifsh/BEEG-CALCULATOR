@@ -68,7 +68,7 @@ class CheckBox(QCheckBox):
 class dropdownbox(QComboBox):
     def __init__(self,window,options=list):
         super().__init__(window)
-        self.setFixedSize(300,50)
+        self.setFixedSize(200,50)
         self.addItems(options)
         
     
@@ -76,11 +76,12 @@ class Scrollbox:
     def __init__(self,window,pos,size):
         self.workoutbox = QGroupBox(window)
         self.scroll = QScrollArea(window)
-        self.layout = QFormLayout()
+        self.layout = QGridLayout()
         self.scroll.move(*pos)
         self.scroll.setFixedSize(*size)
-        self.scrollwidglist = []
-        self.layout.addRow(Button(window,"add row",None,(100,50),window.addrow))
+        self.layout.setAlignment(Qt.AlignTop)
+        self.scrollwidglist = [[Button(window,"add row",None,(100,50),window.addrow)]]
+        self.layout.addWidget(*self.scrollwidglist[0],0,1)
         self.workoutbox.setLayout(self.layout)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.workoutbox)

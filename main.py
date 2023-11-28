@@ -105,7 +105,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def addworkoutscreen(self):
         self.widgets= {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title": Text(self,"Add excercise",(225,0),20),
+            "title": Text(self,"Add workout",(225,0),20),
             "workoutbox": Scrollbox(self,(10,100),(580,490)),
             "saveworkout": Button(self,"Save workout",(440,10),(150,50),self.saveworkout)
         }
@@ -144,17 +144,31 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             # w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
     
     def addrow(self):
-        index = len(self.widgets["workoutbox"].scrollwidglist)
+        index = len(self.widgets["workoutbox"].scrollwidglist)-1
+        scrollbox = lambda: self.widgets["workoutbox"]
+        scrollbox().scrollwidglist.insert(index,[dropdownbox(self,self.excercises["excercise"]),
+                                                          LineEdit(self,"Sets",None,(80,50)),
+                                                          LineEdit(self,"Reps",None,(80,50)),
+                                                          Button(self,"Delete",None,(100,50),(lambda:self.deleterow(row=index))),
+                                                          
+                                                          ])
         
-        self.widgets["workoutbox"].scrollwidglist.append([dropdownbox(self,self.excercises["excercise"]),Button(self,"Delete",None,(100,50),self.deleterow)])
-        self.widgets["workoutbox"].scrollwidglist[index][1].clicked.connect(lambda : self.deleterow(row=index))
-        self.widgets["workoutbox"].scrollwidglist[index][1].setStyleSheet("QPushButton:hover{border: 4px solid red}")
-        self.widgets["workoutbox"].layout.removeRow(index)
-        self.widgets["workoutbox"].layout.addRow(*self.widgets["workoutbox"].scrollwidglist[index])
-        self.widgets["workoutbox"].layout.addRow(Button(self,"add row",None,(100,50),self.addrow))
+
+        
+        scrollbox().scrollwidglist[index][3].setStyleSheet("QPushButton:hover{border: 4px solid red}")
+        scrollbox().layout.removeWidget(scrollbox().scrollwidglist[-1][0])
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][0],index,0)
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][1],index,1,1,2)
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][2],index,2)
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][3],index,3)
+        
+        
+        
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[-1][0],index+1,1)
         
     def deleterow(self,row):
-        self.widgets["workoutbox"].layout.removeRow(row)
+        for i in self.widgets["workoutbox"].scrollwidglist[row]:
+            self.widgets["workoutbox"].layout.removeWidget(i)
         self.widgets["workoutbox"].scrollwidglist.pop(row)
     
     def submitlogin(self): # controls what the submit button does in the login screen
