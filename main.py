@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import (QMainWindow, QApplication)
 import sys,pandas, sqlalchemy
 from tools import *
-from random import choice
+from random import choice,randint
 import json
 
 
@@ -30,8 +30,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         
 
         self.excercises = pandas.read_csv("excercises.csv")
-        self.workouts = pandas.read_csv("workouts.csv")
-        
         # reads data about users and if no users are found create a new data file
 
         self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata["deviceid"])))
@@ -125,30 +123,35 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
         #This is extra functions of buttons that aren't changing frames so that I won't need to switch to the other 
         # script every time I need to create a new button
-    
+
     #endregion SCREENS -------------------------------------------
     #region-BUTTONFUNCTIONS ---------------------------------
     def saveworkout(self):
-        excercisesdone = [i[0].currentText() for i in self.widgets["workoutbox"].scrollwidglist]
-        if not all(i != "None" for i in excercisesdone):
-            self.widgets["saveworkout"].notice(0.5,"Delete Empty Rows","Save Workout")
-        elif self.widgets["workoutbox"].scrollwidglist == []:
-            self.widgets["saveworkout"].notice(0.5,"Add a Row","Save Workout")
+        while True:
+            workoutID = randint(0,999999)
+            if workoutID not in list(self.connection.execute(sqlalchemy.text("SELECT workoutID FROM workoutslink"))):
+                break
+        
+        self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
+        
+        print(workoutID)
+        data = list(map(lambda i: [workoutID,i[0].currentText(),i[1].text(),i[2].text(),i[3].text()],self.widgets["workoutbox"].scrollwidglist[:-1]))
+        filtereddata = list(filter(lambda x : all(i != "" for i in x),data))
+        print(filtereddata)
+        if filtereddata != data:
+            self.widgets["saveworkout"].notice(0.5, "Remove Empty Rows", "Save Workout")
         else:
-            newrow = pandas.DataFrame.from_records([{"UID":self.uid,"excercises":excercisesdone}])
-            self.workouts = pandas.concat([self.workouts, newrow])
-            self.workouts.reset_index(inplace=True,drop=True) # Resets indexes
-            self.widgets["saveworkout"].notice(0.5,"Workout Saved","Save Workout")
-            self.workouts.to_csv("workouts.csv",index=False) # Saves to the the file#
-            
-            # w1 = list(map(lambda x: eval(x),self.workouts.loc[self.workouts["UID"]==self.uid,"excercises"]))
+            workoutdata = pandas.DataFrame(data,columns=["workoutID","excercise","sets","reps","weight"])
+            workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
+            self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
     
     def addrow(self):
         index = len(self.widgets["workoutbox"].scrollwidglist)-1
         scrollbox = lambda: self.widgets["workoutbox"]
         scrollbox().scrollwidglist.insert(index,[dropdownbox(self,self.excercises["excercise"]),
-                                                          LineEdit(self,"Sets",None,(80,50)),
-                                                          LineEdit(self,"Reps",None,(80,50)),
+                                                          LineEdit(self,"Sets",None,(65,50)),
+                                                          LineEdit(self,"Reps",None,(65,50)),
+                                                          LineEdit(self,"Weight",None,(80,50)),
                                                           Button(self,"Delete",None,(100,50),(lambda:self.deleterow(row=index))),
                                                           
                                                           ])
@@ -157,19 +160,19 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         
         scrollbox().scrollwidglist[index][3].setStyleSheet("QPushButton:hover{border: 4px solid red}")
         scrollbox().layout.removeWidget(scrollbox().scrollwidglist[-1][0])
-        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][0],index,0)
-        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][1],index,1,1,2)
-        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][2],index,2)
-        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][3],index,3)
-        
-        
-        
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][0],index,0,1,2)
+        scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][1],index,2)
+        for i in range(3,6):
+            scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][i-1],index,i)
         scrollbox().layout.addWidget(scrollbox().scrollwidglist[-1][0],index+1,1)
         
-    def deleterow(self,row):
+    def deleterow(self,row):     
         for i in self.widgets["workoutbox"].scrollwidglist[row]:
             self.widgets["workoutbox"].layout.removeWidget(i)
         self.widgets["workoutbox"].scrollwidglist.pop(row)
+        for index,i in enumerate(self.widgets["workoutbox"].scrollwidglist):
+            if len(i) == 5:
+                i[4].clicked.connect(lambda:self.deleterow(row=index))
     
     def submitlogin(self): # controls what the submit button does in the login screen
         username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
@@ -217,25 +220,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.widgets["password"].setEchoMode(QLineEdit.Password)
             self.widgets["showpassword"].setText("Show")
     
-    def createnewexcercise(self): # 1:Legs 2: Chest 3: Bicep 4: Tricep 5:Back 6:Shoulders 7:Lats 8: Core 9: Forearm 0: Full Body
-        workout,muscle = (self.widgets[i].text() for i in ["workoutname","bodypart"])
-        if all(i == "" for i in (workout,muscle)):# If every box is empty
-            self.widgets["addworkout"].notice(0.5,"Boxes aren't filled","Submit")
-        else:
-            if workout in set(self.excercises): # If the user already exists
-                self.widgets["addworkout"].notice(0.5,"Workout already exists","Submit")
-            else:
-                newrow = pandas.DataFrame.from_records([{"excercise":workout,"musclehit":muscle}])
-                self.excercises = pandas.concat([self.excercises,newrow])
-                self.excercises.reset_index(drop=True,inplace=True)
-                self.widgets["addworkout"].notice(0.5,"Workout added","Add")
-                self.excercises.to_csv("excercises.csv",mode="w",index=False)
-                for i in ["workoutname","bodypart"]:
-                    self.widgets[i].setParent(None)
-                    del self.widgets[i]
-                self.widgets["workoutname"] = LineEdit(self,"Workout Name",(150,100),(300,50))
-                self.widgets["bodypart"] = LineEdit(self,"Muscle Group Hit",(150,160),(300,50))
-                self.update()
         
     def logout(self):
         self.connection.execute(sqlalchemy.text("DELETE FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata['deviceid']))

@@ -48,6 +48,7 @@ class LineEdit(QLineEdit):
         super().__init__(window)
         if pos is not None:
             self.move(*pos)
+        
         self.setPlaceholderText(text) # Gives the edit box a prompt
         self.setFixedSize(*size)
     
@@ -71,7 +72,7 @@ class dropdownbox(QComboBox):
         self.setFixedSize(200,50)
         self.addItems(options)
         
-    
+
 class Scrollbox:
     def __init__(self,window,pos,size):
         self.workoutbox = QGroupBox(window)
@@ -103,7 +104,7 @@ class Progressbar(QProgressBar):
         self.setMinimum(min)
         self.setMaximum(max)
         self.move(*pos)
-        self.setFixedSize(200,30)
+        self.setFixedSize(180,30)
         self.setFormat(text)
         
         self.timer = QTimer()
