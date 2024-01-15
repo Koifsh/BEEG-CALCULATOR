@@ -127,20 +127,23 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     #endregion SCREENS -------------------------------------------
     #region-BUTTONFUNCTIONS ---------------------------------
     def saveworkout(self):
-        while True:
-            workoutID = randint(0,999999)
-            if workoutID not in list(self.connection.execute(sqlalchemy.text("SELECT workoutID FROM workoutslink"))):
-                break
-        
-        self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
-        
-        print(workoutID)
+        workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
+        workoutlist = list(self.connection.execute(sqlalchemy.text("SELECT workoutID FROM workoutslink")))#
+        print(workoutlist)
+        while workoutID in workoutlist:
+                workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
         data = list(map(lambda i: [workoutID,i[0].currentText(),i[1].text(),i[2].text(),i[3].text()],self.widgets["workoutbox"].scrollwidglist[:-1]))
-        filtereddata = list(filter(lambda x : all(i != "" for i in x),data))
+        print(data)
+        filtereddata = list(filter(lambda x : all(i != "" and i != "Not selected" for i in x),data))
         print(filtereddata)
         if filtereddata != data:
             self.widgets["saveworkout"].notice(0.5, "Remove Empty Rows", "Save Workout")
         else:
+
+            
+            self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
+            
+            print(workoutID)
             workoutdata = pandas.DataFrame(data,columns=["workoutID","excercise","sets","reps","weight"])
             workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
             self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
