@@ -148,6 +148,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             print(workoutID)
             workoutdata = pandas.DataFrame(data,columns=["workoutID","excercise","sets","reps","weight"])
             workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
+            self.connection.commit()
             self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
     
     
