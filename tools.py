@@ -1,4 +1,5 @@
 from PyQt5 import QtGui
+from PyQt5.QtGui import QFocusEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -44,6 +45,8 @@ class Cooldown(QThread):
 
 
 class LineEdit(QLineEdit):
+    focusInSignal = pyqtSignal()
+    focusOutSignal = pyqtSignal()
     def __init__(self,window,text,pos,size=(200,50)):
         super().__init__(window)
         if pos is not None:
@@ -51,6 +54,14 @@ class LineEdit(QLineEdit):
         
         self.setPlaceholderText(text) # Gives the edit box a prompt
         self.setFixedSize(*size)
+    
+    def focusInEvent(self, event):
+        
+        self.focusInSignal.emit()
+    
+    def focusOutEvent(self, event):
+        
+        self.focusOutSignal.emit()
     
 class Text(QLabel):
     def __init__(self,window,text,pos,size):
@@ -71,6 +82,7 @@ class dropdownbox(QComboBox):
         super().__init__(window)
         self.setFixedSize(200,50)
         self.addItems(options)
+        
         
 
 class Scrollbox:

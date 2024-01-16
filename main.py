@@ -148,7 +148,28 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
             self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
     
+    def maskchange(self):
+        self.widgets["workoutbox"].scrollwidglist[row][2]
+    
+    def run_check(self, row):
+        workoutrow = lambda: self.widgets["workoutbox"].scrollwidglist[row]
+        if workoutrow()[0].currentText() == "Run":
+            workoutrow()[1].setPlaceholderText("Distance")
+            workoutrow()[2].setPlaceholderText("HH:MM")
+            workoutrow()[2].focusInSignal.connect(lambda: workoutrow()[2].setInputMask("00:00"))
+            workoutrow()[2].focusOutSignal.connect(lambda: workoutrow()[2].setInputMask("") if workoutrow()[2].text() in ["",":"] else None)
+            workoutrow()[3].setText("N/A")
+            workoutrow()[3].hide()
+        else:
+            workoutrow()[1].setPlaceholderText("Sets")
+            workoutrow()[2].setPlaceholderText("Reps")
+            workoutrow()[3].setText("")
+            workoutrow()[3].show()
+            
+            
+    
     def addrow(self):
+        
         index = len(self.widgets["workoutbox"].scrollwidglist)-1
         scrollbox = lambda: self.widgets["workoutbox"]
         scrollbox().scrollwidglist.insert(index,[dropdownbox(self,self.excercises["excercise"]),
@@ -156,10 +177,12 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
                                                           LineEdit(self,"Reps",None,(65,50)),
                                                           LineEdit(self,"Weight",None,(80,50)),
                                                           Button(self,"Delete",None,(100,50),(lambda:self.deleterow(row=index))),
-                                                          
                                                           ])
-        
+        scrollbox().scrollwidglist[index][0].currentTextChanged.connect(lambda :self.run_check(index))
 
+        for i in range(1,4):
+            scrollbox().scrollwidglist[index][i].setValidator(QIntValidator())
+        
         
         scrollbox().scrollwidglist[index][3].setStyleSheet("QPushButton:hover{border: 4px solid red}")
         scrollbox().layout.removeWidget(scrollbox().scrollwidglist[-1][0])
