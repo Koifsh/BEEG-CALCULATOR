@@ -4,6 +4,7 @@ import sys,pandas, sqlalchemy
 from tools import *
 from random import choice,randint
 import json
+from functools import partial
 
 
 class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
@@ -101,6 +102,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
     @screen
     def addworkoutscreen(self):
+        self.rowID = 0
         self.widgets= {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title": Text(self,"Add workout",(225,0),20),
@@ -148,8 +150,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
             self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
     
-    def maskchange(self):
-        self.widgets["workoutbox"].scrollwidglist[row][2]
     
     def run_check(self, row):
         workoutrow = lambda: self.widgets["workoutbox"].scrollwidglist[row]
@@ -169,14 +169,15 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             
     
     def addrow(self):
-        
+        self.rowID += 1
         index = len(self.widgets["workoutbox"].scrollwidglist)-1
         scrollbox = lambda: self.widgets["workoutbox"]
         scrollbox().scrollwidglist.insert(index,[dropdownbox(self,self.excercises["excercise"]),
                                                           LineEdit(self,"Sets",None,(65,50)),
                                                           LineEdit(self,"Reps",None,(65,50)),
                                                           LineEdit(self,"Weight",None,(80,50)),
-                                                          Button(self,"Delete",None,(100,50),(lambda:self.deleterow(row=index))),
+                                                          Button(self,"Delete",None,(100,50),partial(self.deleterow,self.rowID)),
+                                                          self.rowID
                                                           ])
         scrollbox().scrollwidglist[index][0].currentTextChanged.connect(lambda :self.run_check(index))
 
@@ -192,14 +193,18 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             scrollbox().layout.addWidget(scrollbox().scrollwidglist[index][i-1],index,i)
         scrollbox().layout.addWidget(scrollbox().scrollwidglist[-1][0],index+1,1)
         
-    def deleterow(self,row):     
-        for i in self.widgets["workoutbox"].scrollwidglist[row]:
-            self.widgets["workoutbox"].layout.removeWidget(i)
-        self.widgets["workoutbox"].scrollwidglist.pop(row)
-        for index,i in enumerate(self.widgets["workoutbox"].scrollwidglist):
-            if len(i) == 5:
-                i[4].clicked.connect(lambda:self.deleterow(row=index))
-    
+    def deleterow(self,row):
+        print(row)
+        widglist = lambda : self.widgets["workoutbox"].scrollwidglist
+        for i in widglist()[:-1]:
+            if i[5] == row:
+                for j in i[:-1]:
+                    self.widgets["workoutbox"].layout.removeWidget(j)
+                widglist().remove(i)
+        print(list(range(len(self.widgets["workoutbox"].scrollwidglist))))
+        
+        map(lambda i,v: widglist()[i][4].clicked.connect(partial(self.deleterow,i)) if len(v) == 5 else None, enumerate(widglist()))
+
     def submitlogin(self): # controls what the submit button does in the login screen
         username,password = (self.widgets[i].text() for i in ["username","password"]) # creates a list with the text of each box
         if all(i == "" for i in (username,password)): # If every box is empty
