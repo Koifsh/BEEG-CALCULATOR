@@ -4,6 +4,7 @@ import sys,pandas, sqlalchemy
 from random import choice
 import json
 from functools import partial
+from tools import *
 
 
 class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widget class
