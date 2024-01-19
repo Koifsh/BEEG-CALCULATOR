@@ -1,8 +1,7 @@
 # import libraries
 from PyQt5.QtWidgets import (QMainWindow, QApplication)
 import sys,pandas, sqlalchemy
-from tools import *
-from random import choice,randint
+from random import choice
 import json
 from functools import partial
 
@@ -17,7 +16,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.connection = self.engine.connect()
         
         try:
-            with open("data.json", "r") as data:
+            with open("./data/data.json", "r") as data:
                 self.devicedata = json.load(data)
         except FileNotFoundError:
             deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
@@ -28,9 +27,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             with open("data.json","x") as data:
                 json.dump(self.devicedata, data)
         
-        
-
-        self.excercises = pandas.read_csv("excercises.csv")
+        self.excercises = pandas.read_csv("./data/excercises.csv")
         # reads data about users and if no users are found create a new data file
 
         self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata["deviceid"])))
@@ -67,6 +64,8 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "title": Text(self,"Main Menu",(200,0),20),
             "logout": Button(self,"Logout",(10,10),(100,70),self.logout),
             "addworkout": Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
+            "1repmax" : Button(self, "1 Rep Max Calculator", (200,220), func=self.onerepmaxscreen),
+            "options" : Button(self, "Options", (200,430),func=self.optionsscreen),
         }
     
     @screen
@@ -110,6 +109,44 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "saveworkout": Button(self,"Save workout",(440,10),(150,50),self.saveworkout)
         }
         self.addrow()
+
+
+    @screen
+    def onerepmaxscreen(self):
+        desctext = """
+Enter a weight and the max reps you can acheive on it
+*1 rep max is calculated by averaging Matt Bryzcki's formula,
+Epley's formula and Lander's formula
+        """
+        self.widgets = {
+            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title": Text(self,"1 Rep Max Calculator",(225,0),20),
+            "weight" : LineEdit(self,"Weight",(10,150)),
+            "x": Text(self,"x",(215,150),20),
+            "reps": LineEdit(self,"Reps",(240,150)),
+            "go": Button(self,"Go",(450,150),(90,50),func=self.submitonerep),
+            "estimatetext": Text(self,"Estimated one rep",(10,210),40),
+            "estimate":Button(self,"",(250,210),(100,50),func=None),
+            "desc": Text(self,desctext,(10,300),12),
+        }
+        self.widgets["estimate"].setEnabled(False)
+        self.widgets["weight"].setValidator(QIntValidator())
+        self.widgets["reps"].setValidator(QIntValidator())
+    
+    
+    @screen
+    def optionsscreen(self):
+        self.widgets = {
+            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title" : Text(self,"Options",(225,0),15),
+            "changeaesthetic": Button(self,"Change Aesthetic",(200,140))
+            }
+    
+    def submitonerep(self):
+        weight,reps = int(self.widgets["weight"].text()), int(self.widgets["reps"].text())
+        onerep = (weight/(1.0278-0.0278*reps) + weight*(1 + 0.0333 * reps) + (100*weight)/(101.3 - 2.67123 * reps))/3
+        self.widgets["estimate"].setText(f"{onerep:.2f}")
+        
 
     def update(self):
         for key, widget in self.widgets.items():
@@ -195,14 +232,12 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         scrollbox().layout.addWidget(scrollbox().scrollwidglist[-1][0],index+1,1)
         
     def deleterow(self,row):
-        print(row)
         widglist = lambda : self.widgets["workoutbox"].scrollwidglist
         for i in widglist()[:-1]:
             if i[5] == row:
                 for j in i[:-1]:
                     self.widgets["workoutbox"].layout.removeWidget(j)
                 widglist().remove(i)
-        print(list(range(len(self.widgets["workoutbox"].scrollwidglist))))
         
         map(lambda i,v: widglist()[i][4].clicked.connect(partial(self.deleterow,i)) if len(v) == 5 else None, enumerate(widglist()))
 
@@ -275,7 +310,7 @@ style = {
 if __name__ == "__main__": # So that the script can't be executed indirectly
     app = QApplication(sys.argv) # Initializes the application
      # initializes the window by instantiating the screen class
-    with open("style.css", "r") as file:
+    with open("./styles/style.css", "r") as file:
         stylesheet = str(file.read())
     
     for key, value in style.items():

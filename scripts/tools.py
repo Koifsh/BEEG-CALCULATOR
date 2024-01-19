@@ -69,7 +69,7 @@ class Text(QLabel):
         self.move(*pos)
         self.setAlignment(Qt.AlignVCenter) # changes the alignment to the center of the widget
         self.setFont(QFont("consolas",size))
-        self.setFixedSize(size*len(text),size*3) # adjusts the size of the widget based on text size.
+        self.adjustSize()# adjusts the size of the widget based on text size.
 
 class CheckBox(QCheckBox):
     def __init__(self,window,text,pos):
