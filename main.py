@@ -25,7 +25,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             while deviceid in devicelist:
                 deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
             self.devicedata = {"deviceid": deviceid}
-            with open("data.json","x") as data:
+            with open("./data/data.json","x") as data:
                 json.dump(self.devicedata, data)
         
         self.excercises = pandas.read_csv("./data/excercises.csv")
@@ -140,8 +140,44 @@ Epley's formula and Lander's formula
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title" : Text(self,"Options",(225,0),15),
-            "changeaesthetic": Button(self,"Change Aesthetic",(200,140))
+            "changeaesthetic": Button(self,"Change Aesthetic",(200,140),func=self.stylechangescreen)
             }
+    
+    @screen
+    def stylechangescreen(self):
+        self.widgets = {
+            "back" : Button(self,"Back",(10,10),(100,50),func=self.optionsscreen),
+            "title" : Text(self,"Change ",(225,0),15),
+            "resetcolors": Button(self, "Reset Colours",(390,10),func=self.resetcolors),
+            "background" : Button(self,"Background",(200,180),func=lambda: self.colourpicker("bgcol")),
+            "accent" :  Button(self,"Accent",(200,260),func=lambda: self.colourpicker("accent")),
+            "primary":   Button(self,"Primary",(200,340),func=lambda: self.colourpicker("primcol")),
+            "secondary":  Button(self,"Secondary",(200,420),func=lambda: self.colourpicker("seccol")),
+            "textcolour": Button(self,"Text Colour",(200,500), func=lambda: self.colourpicker("textcol")),
+        }
+
+    
+    def colourpicker(self, element):
+        color = QColorDialog.getColor().name()
+        style[element] = color
+        stylesheet = sheettemplate
+        for key,value in style.items():
+            stylesheet = stylesheet.replace(key,value)
+        app.setStyleSheet(stylesheet)
+        jsonstyle = json.dumps(style)
+        with open("styles/defaultstyle.json", "w") as jsonfile:
+            jsonfile.write(jsonstyle)
+    
+    def resetcolors(self):
+        style = defaultstyle
+        stylesheet = sheettemplate
+        for key,value in style.items():
+            stylesheet = stylesheet.replace(key,value)
+            
+        app.setStyleSheet(stylesheet)
+        jsonstyle = json.dumps(style)
+        with open("styles/defaultstyle.json", "w") as jsonfile:
+            jsonfile.write(jsonstyle)
     
     def submitonerep(self):
         weight,reps = int(self.widgets["weight"].text()), int(self.widgets["reps"].text())
@@ -187,7 +223,12 @@ Epley's formula and Lander's formula
             workoutdata = pandas.DataFrame(data,columns=["workoutID","excercise","sets","reps","weight"])
             workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
             self.connection.commit()
+            
             self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
+            self.widgets["saveworkout"].worker.finished.connect(self.addworkoutscreen)
+            
+
+            
     
     
     def run_check(self, row):
@@ -300,7 +341,7 @@ Epley's formula and Lander's formula
         
     #endregion BUTTONFUNCTIONS ------------------------------
 
-style = {
+defaultstyle = {
     "primcol" : "#3D3D3D",
     "seccol" : "#F76D57",
     "accent" : "#2A363B",
@@ -313,8 +354,12 @@ if __name__ == "__main__": # So that the script can't be executed indirectly
      # initializes the window by instantiating the screen class
     with open("./styles/style.css", "r") as file:
         stylesheet = str(file.read())
+    with open("./styles/defaultstyle.json","r") as file:
+        style = json.load(file)
+
+    sheettemplate = stylesheet
     
-    for key, value in style.items():
+    for key, value in defaultstyle.items():
         stylesheet = stylesheet.replace(key, value)
     app.setStyleSheet(stylesheet)
     window = Screen()

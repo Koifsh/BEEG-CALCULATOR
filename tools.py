@@ -66,7 +66,8 @@ class LineEdit(QLineEdit):
 class Text(QLabel):
     def __init__(self,window,text,pos,size):
         super().__init__(text,window)
-        self.move(*pos)
+        if pos:
+            self.move(*pos)
         self.setAlignment(Qt.AlignVCenter) # changes the alignment to the center of the widget
         self.setFont(QFont("consolas",size))
         self.adjustSize()# adjusts the size of the widget based on text size.
@@ -98,6 +99,11 @@ class Scrollbox:
         self.workoutbox.setLayout(self.layout)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.workoutbox)
+        
+    def addText(self,list):
+        for i in list:
+            self.layout.addWidget(Text(self.window,i,None,15))
+        
         
     def show(self):
         self.workoutbox.show()
