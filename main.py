@@ -78,7 +78,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             "username": LineEdit(self,"Username",(200,60)),
             "password": LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,120),(60,50),func=self.showpassword),
-            "submit": Button(self,"Submit",(200,180),func=self.submitcreateuser)
+            "submit": Button(self,"Submit",(200,180),func=self.submitcreateuser),
         }
         #Sets the preview of the password field to dots for better security against shouldering
         self.showpass = False
