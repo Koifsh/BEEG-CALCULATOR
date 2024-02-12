@@ -24,7 +24,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             devicelist = list(self.connection.execute(sqlalchemy.text("SELECT deviceID FROM deviceToUser")))[0]
             while deviceid in devicelist:
                 deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
-            self.devicedata = {"deviceid": deviceid}
+            self.devicedata = {"deviceid": deviceid,"measurement": "metric"}
             with open("./data/data.json","x") as data:
                 json.dump(self.devicedata, data)
         
@@ -140,7 +140,8 @@ Epley's formula and Lander's formula
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title" : Text(self,"Options",(225,0),15),
-            "changeaesthetic": Button(self,"Change Aesthetic",(200,140),func=self.stylechangescreen)
+            "changeaesthetic": Button(self,"Change Aesthetic",(200,140),func=self.stylechangescreen),
+            "Metric System": dropdownbox(self,["Metric System (kg/g), Imperial System (Pounds/Stones)"]),
             }
     
     @screen
@@ -156,6 +157,13 @@ Epley's formula and Lander's formula
             "textcolour": Button(self,"Text Colour",(200,500), func=lambda: self.colourpicker("textcol")),
         }
 
+    @screen
+    def displaydata(self):
+        self.widgets = {
+            "back" : Button(self,"Back",(10,10),(100,50),func=self.optionsscreen),
+            "title" : Text(self,"Display Data",(225,0),15),
+            
+        }
     
     def colourpicker(self, element):
         color = QColorDialog.getColor().name()
@@ -215,7 +223,9 @@ Epley's formula and Lander's formula
         if filtereddata != data:
             self.widgets["saveworkout"].notice(0.5, "Remove Empty Rows", "Save Workout")
         else:
-
+            if self.devicedata["measurement"] != "metric":
+                for index,item in enumerate(data):
+                    data[index] = [item[0], round((float(item[x])*0.453592),2) for x in range(1,4)]
             
             self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
             
