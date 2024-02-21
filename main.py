@@ -53,32 +53,33 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def startscreen(self):
         # Creates a blank screen and then loads 3 widgets onto the screen - this is the first screen the user will see
         self.widgets = {
-            "title": Text(self,"Fitness Calculator",(200,0),20),
-            "login": Button(self,"Login",(200,60),func=self.loginscreen),
-            "createuser" : Button(self,"Create new user",(200,140),func=self.createuserscreen)
+            "title":        Text(self,"Fitness Calculator",(200,0),20),
+            "login":        Button(self,"Login",(200,60),func=self.loginscreen),
+            "createuser" :  Button(self,"Create new user",(200,140),func=self.createuserscreen)
         }
     
     @screen
     def mainscreen(self):
         # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
         self.widgets = {
-            "title": Text(self,"Main Menu",(200,0),20),
-            "logout": Button(self,"Logout",(10,10),(100,70),self.logout),
-            "addworkout": Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
-            "1repmax" : Button(self, "1 Rep Max Calculator", (200,220), func=self.onerepmaxscreen),
-            "options" : Button(self, "Options", (200,430),func=self.optionsscreen),
+            "title":        Text(self,"Main Menu",(200,0),20),
+            "logout":       Button(self,"Logout",(10,10),(100,70),self.logout),
+            "addworkout":   Button(self,"Add new workout",(200,140),func=self.addworkoutscreen),
+            "1repmax" :     Button(self, "1 Rep Max Calculator", (200,220), func=self.onerepmaxscreen),
+            "displaydata":  Button(self,"Display Workouts",(200,300),func=self.displaydata),
+            "options" :     Button(self, "Options", (200,430),func=self.optionsscreen),
         }
     
     @screen
     def createuserscreen(self):
         # This is the create user screen with 5 widgets about creating users
         self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.startscreen),
-            "title": Text(self,"Create New User",(225,0),20),
-            "username": LineEdit(self,"Username",(200,60)),
-            "password": LineEdit(self,"Password",(200,120)),
+            "back" :        Button(self,"Back",(10,10),(100,50),func=self.startscreen),
+            "title":        Text(self,"Create New User",(225,0),20),
+            "username":     LineEdit(self,"Username",(200,60)),
+            "password":     LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,120),(60,50),func=self.showpassword),
-            "submit": Button(self,"Submit",(200,180),func=self.submitcreateuser),
+            "submit":       Button(self,"Submit",(200,180),func=self.submitcreateuser),
         }
         #Sets the preview of the password field to dots for better security against shouldering
         self.showpass = False
@@ -87,13 +88,13 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     @screen
     def loginscreen(self): #This is the login screen with 5 widgets about logging into the saved users
         self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.startscreen),
-            "title": Text(self,"Login",(225,0),20),
-            "username": LineEdit(self,"Username",(200,60)),
-            "password": LineEdit(self,"Password",(200,120)),
+            "back" :        Button(self,"Back",(10,10),(100,50),func=self.startscreen),
+            "title":        Text(self,"Login",(225,0),20),
+            "username":     LineEdit(self,"Username",(200,60)),
+            "password":     LineEdit(self,"Password",(200,120)),
             "showpassword": Button(self,"Show",(410,125),(50,40),func=self.showpassword,text_size=12),
-            "RememberMe": CheckBox(self,"Remember me",(195,180)),
-            "submit": Button(self,"Submit",(200,240),func=self.submitlogin)
+            "RememberMe":   CheckBox(self,"Remember me",(195,180)),
+            "submit":       Button(self,"Submit",(200,240),func=self.submitlogin)
             
         }
         #Sets the preview of the password field to dots for better security against shouldering
@@ -104,10 +105,10 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     def addworkoutscreen(self):
         self.rowID = 0
         self.widgets= {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title": Text(self,"Add workout",(225,0),20),
-            "workoutbox": Scrollbox(self,(10,100),(580,490)),
-            "saveworkout": Button(self,"Save workout",(440,10),(150,50),self.saveworkout)
+            "back" :        Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title":        Text(self,"Add workout",(225,0),20),
+            "workoutbox":   Scrollbox(self,(10,100),(580,490)),
+            "saveworkout":  Button(self,"Save workout",(440,10),(150,50),self.saveworkout)
         }
         self.addrow()
 
@@ -120,15 +121,15 @@ Enter a weight and the max reps you can acheive on it
 Epley's formula and Lander's formula
         """
         self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title": Text(self,"1 Rep Max Calculator",(225,0),20),
-            "weight" : LineEdit(self,"Weight",(10,150)),
-            "x": Text(self,"x",(215,150),20),
-            "reps": LineEdit(self,"Reps",(240,150)),
-            "go": Button(self,"Go",(450,150),(90,50),func=self.submitonerep),
+            "back" :        Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title":        Text(self,"1 Rep Max Calculator",(225,0),20),
+            "weight" :      LineEdit(self,"Weight",(10,150)),
+            "x":            Text(self,"x",(215,150),20),
+            "reps":         LineEdit(self,"Reps",(240,150)),
+            "go":           Button(self,"Go",(450,150),(90,50),func=self.submitonerep),
             "estimatetext": Text(self,"Estimated one rep",(10,210),40),
-            "estimate":Button(self,"",(250,210),(100,50),func=None),
-            "desc": Text(self,desctext,(10,300),12),
+            "estimate":     Button(self,"",(250,210),(100,50),func=None),
+            "desc":         Text(self,desctext,(10,300),12),
         }
         self.widgets["estimate"].setEnabled(False)
         self.widgets["weight"].setValidator(QIntValidator())
@@ -138,11 +139,12 @@ Epley's formula and Lander's formula
     @screen
     def optionsscreen(self):
         self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title" : Text(self,"Options",(225,0),15),
-            "changeaesthetic": Button(self,"Change Aesthetic",(200,140),func=self.stylechangescreen),
-            "Metric System": dropdownbox(self,["Metric System (kg/g), Imperial System (Pounds/Stones)"]),
+            "back" :            Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title" :           Text(self,"Options",(225,0),15),
+            "changeaesthetic":  Button(self,"Change Aesthetic",(200,140),func=self.stylechangescreen),
+            "Metric System":    Button(self,f"Measurement: {self.devicedata['measurement']}",(200,220),func=self.changesystem),
             }
+
     
     @screen
     def stylechangescreen(self):
@@ -160,10 +162,11 @@ Epley's formula and Lander's formula
     @screen
     def displaydata(self):
         self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.optionsscreen),
+            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title" : Text(self,"Display Data",(225,0),15),
             
         }
+    
     
     def colourpicker(self, element):
         color = QColorDialog.getColor().name()
@@ -210,6 +213,14 @@ Epley's formula and Lander's formula
 
     #endregion SCREENS -------------------------------------------
     #region-BUTTONFUNCTIONS ---------------------------------
+    def changesystem(self):
+        if self.devicedata["measurement"] == "metric":
+            self.devicedata["measurement"] = "imperial"
+        else:
+            self.devicedata["measurement"]="metric"
+        self.widgets["Metric System"].setText(f"Measurement: {self.devicedata['measurement']}")
+        self.widgets["Metric System"].show()
+    
     def saveworkout(self):
         workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
         workoutlist = list(self.connection.execute(sqlalchemy.text("SELECT workoutID FROM workoutslink")))#
@@ -225,7 +236,7 @@ Epley's formula and Lander's formula
         else:
             if self.devicedata["measurement"] != "metric":
                 for index,item in enumerate(data):
-                    data[index] = [item[0], round((float(item[x])*0.453592),2) for x in range(1,4)]
+                    data[index] = [item[0]] + [round((float(item[x])*0.453592),2) for x in range(1,4)]
             
             self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
             
