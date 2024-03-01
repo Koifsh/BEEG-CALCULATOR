@@ -1,11 +1,10 @@
-from PyQt5 import QtGui
-from PyQt5.QtGui import QFocusEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from time import sleep
-
-from PyQt5.QtWidgets import QLineEdit, QWidget
+from datetime import timedelta
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 # from threading import Thread
 
 
@@ -113,6 +112,58 @@ class Scrollbox:
         self.workoutbox.setParent(None)
         self.scroll.setParent(None)
 
+
+class ExerciseGraph(QWidget):
+    def __init__(self, window,x_vals, y_vals):
+        super().__init__(window)
+        # Create a Matplotlib figure and axis
+        self.figure, self.ax = plt.subplots(figsize=(6,3))
+        self.canvas = FigureCanvas(self.figure)
+        self.x_vals, self.y_vals = x_vals, y_vals
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+        self.setFixedSize(600,450)
+        # Convert x_vals to Python datetime objects
+        # Generate some random data for demonstration
+        self.generate()
+        
+    def generate(self):
+        # Plot the initial data with interpolation
+        self.x_vals = [val.toPyDateTime() for val in self.x_vals]
+        # Set background color
+        self.ax.set_facecolor('#1E1E1E')  # Charcoal
+        self.figure.patch.set_facecolor('#1E1E1E')
+
+        # Set labels color
+        self.ax.xaxis.label.set_color('#FFFFFF')  # Dark Gray
+        self.ax.yaxis.label.set_color('#FFFFFF')  # Dark Gray
+        self.ax.set_xlabel('Date Time')
+        self.ax.set_ylabel('Weight Lifted (lbs)')
+
+        # Set ticks color
+        self.ax.tick_params(axis='x', colors='#FFFFFF',rotation=15)  # Dark Gray
+        self.ax.tick_params(axis='y', colors='#FFFFFF')  # Dark Gray
+
+        # Set grid color
+        self.ax.grid(True, color='#2A363B')  # Slate Gray
+
+        # Set fixed limits for x and y axes with extra space
+        margin = timedelta(days=1)  # Change the timedelta as needed
+        start_date = min(self.x_vals) - margin
+        end_date = max(self.x_vals) + margin
+        self.ax.set_xlim(start_date, end_date)
+
+        # Set y-axis limit
+        self.ax.set_ylim(0, max(self.y_vals) + 10)  # Adjust the limits according to your data
+        
+        self.graph, = self.ax.plot(self.x_vals, self.y_vals, marker='o', linestyle='-', color='#F76D57', linewidth=2)  # Coral
+        self.canvas.draw()
+        
+    
+
+
+    
 
 
 class Progressbar(QProgressBar):

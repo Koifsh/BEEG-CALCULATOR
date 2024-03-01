@@ -161,11 +161,24 @@ Epley's formula and Lander's formula
 
     @screen
     def displaydata(self):
+        data = [
+        QDateTime(2024, 2, 17, 8, 30),
+        QDateTime(2024, 2, 18, 9, 0),
+        QDateTime(2024, 2, 19, 10, 0),
+        QDateTime(2024, 2, 20, 11, 30),
+        QDateTime(2024, 2, 21, 12, 0)
+        ]
+        y_vals = [50, 60, 70, 65, 80]
         self.widgets = {
-            "back" : Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title" : Text(self,"Display Data",(225,0),15),
+            "back" :    Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title" :   Text(self,"Display Data",(225,0),15),
+            "graph" :   ExerciseGraph(self,data,y_vals)
             
         }
+        self.widgets["graph"].move(10,100)
+    
+    def getWorkoutData(self):
+        pass
     
     
     def colourpicker(self, element):
@@ -281,7 +294,7 @@ Epley's formula and Lander's formula
                                                           self.rowID
                                                           ])
         scrollbox().scrollwidglist[index][0].currentTextChanged.connect(lambda :self.run_check(index))
-
+        
         for i in range(1,4):
             scrollbox().scrollwidglist[index][i].setValidator(QIntValidator())
         
