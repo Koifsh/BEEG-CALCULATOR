@@ -233,6 +233,8 @@ Epley's formula and Lander's formula
             self.devicedata["measurement"]="metric"
         self.widgets["Metric System"].setText(f"Measurement: {self.devicedata['measurement']}")
         self.widgets["Metric System"].show()
+        with open("./data/data.json","w") as f:
+            json.dump(self.devicedata, f)
     
     def saveworkout(self):
         workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
@@ -240,16 +242,17 @@ Epley's formula and Lander's formula
         print(workoutlist)
         while workoutID in workoutlist:
                 workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
-        data = list(map(lambda i: [workoutID,i[0].currentText(),i[1].text(),i[2].text(),i[3].text()],self.widgets["workoutbox"].scrollwidglist[:-1]))
+        data = list(map(lambda i: [workoutID,i[0].text(),i[1].text(),i[2].text(),i[3].text()],self.widgets["workoutbox"].scrollwidglist[:-1]))
         print(data)
         filtereddata = list(filter(lambda x : all(i != "" and i != "Not selected" for i in x),data))
-        print(filtereddata)
+        print(self.excercises["excercise"])
+        print("Wide-Grip Push-Up" in filtereddata)
         if filtereddata != data:
-            self.widgets["saveworkout"].notice(0.5, "Remove Empty Rows", "Save Workout")
+            self.widgets["saveworkout"].notice(0.5, "Remove Empty Rows", "Save Workout") 
         else:
             if self.devicedata["measurement"] != "metric":
-                for index,item in enumerate(data):
-                    data[index] = [item[0]] + [round((float(item[x])*0.453592),2) for x in range(1,4)]
+                print("eyup")
+                data = map(lambda x:[x[0],x[1],x[2],x[3],round((float(x[4])*0.453592),2)], data)
             
             self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
             
@@ -265,9 +268,9 @@ Epley's formula and Lander's formula
             
     
     
-    def run_check(self, row):
+    def units_check(self, row):
         workoutrow = lambda: self.widgets["workoutbox"].scrollwidglist[row]
-        if workoutrow()[0].currentText() == "Run":
+        if workoutrow()[0].text() in ["Run","Rowing Erg"]:
             workoutrow()[1].setPlaceholderText("Distance")
             workoutrow()[2].setPlaceholderText("HH:MM")
             workoutrow()[2].focusInSignal.connect(lambda: workoutrow()[2].setInputMask("00:00"))
@@ -286,18 +289,21 @@ Epley's formula and Lander's formula
         self.rowID += 1
         index = len(self.widgets["workoutbox"].scrollwidglist)-1
         scrollbox = lambda: self.widgets["workoutbox"]
-        scrollbox().scrollwidglist.insert(index,[dropdownbox(self,self.excercises["excercise"]),
-                                                          LineEdit(self,"Sets",None,(65,50)),
-                                                          LineEdit(self,"Reps",None,(65,50)),
-                                                          LineEdit(self,"Weight",None,(80,50)),
-                                                          Button(self,"Delete",None,(100,50),partial(self.deleterow,self.rowID)),
-                                                          self.rowID
-                                                          ])
-        scrollbox().scrollwidglist[index][0].currentTextChanged.connect(lambda :self.run_check(index))
-        
+        scrollbox().scrollwidglist.insert(index,[   LineEdit(self,"Excercise",None),
+                                                    LineEdit(self,"Sets",None,(65,50)),
+                                                    LineEdit(self,"Reps",None,(65,50)),
+                                                    LineEdit(self,"+kgs" if self.devicedata["measurement"] == "metric" else "+lbs",None,(80,50)),
+                                                    Button(self,"Delete",None,(100,50),partial(self.deleterow,self.rowID)),
+                                                    self.rowID
+                                                    ])
+        scrollbox().scrollwidglist[index][0].textChanged.connect(lambda :self.units_check(index))
+        completer = QCompleter(self.excercises["excercise"])
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        scrollbox().scrollwidglist[index][0].setCompleter(completer)
         for i in range(1,4):
             scrollbox().scrollwidglist[index][i].setValidator(QIntValidator())
-        
+
         
         scrollbox().scrollwidglist[index][3].setStyleSheet("QPushButton:hover{border: 4px solid red}")
         scrollbox().layout.removeWidget(scrollbox().scrollwidglist[-1][0])

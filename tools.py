@@ -54,12 +54,13 @@ class LineEdit(QLineEdit):
         self.setPlaceholderText(text) # Gives the edit box a prompt
         self.setFixedSize(*size)
     
+    
     def focusInEvent(self, event):
-        
+        super().focusInEvent(event)
         self.focusInSignal.emit()
     
     def focusOutEvent(self, event):
-        
+        super().focusOutEvent(event)
         self.focusOutSignal.emit()
     
 class Text(QLabel):
@@ -114,9 +115,10 @@ class Scrollbox:
 
 
 class ExerciseGraph(QWidget):
-    def __init__(self, window,x_vals, y_vals):
-        super().__init__(window)
+    def __init__(self, win,x_vals, y_vals):
+        super().__init__(win)
         # Create a Matplotlib figure and axis
+        self.win = win
         self.figure, self.ax = plt.subplots(figsize=(6,3))
         self.canvas = FigureCanvas(self.figure)
         self.x_vals, self.y_vals = x_vals, y_vals
@@ -139,7 +141,7 @@ class ExerciseGraph(QWidget):
         self.ax.xaxis.label.set_color('#FFFFFF')  # Dark Gray
         self.ax.yaxis.label.set_color('#FFFFFF')  # Dark Gray
         self.ax.set_xlabel('Date Time')
-        self.ax.set_ylabel('Weight Lifted (lbs)')
+        self.ax.set_ylabel(f'Weight Lifted ({"lbs" if self.win.devicedata["measurement"] == "imperial" else "kgs"})')
 
         # Set ticks color
         self.ax.tick_params(axis='x', colors='#FFFFFF',rotation=15)  # Dark Gray
