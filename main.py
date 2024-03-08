@@ -112,7 +112,6 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         }
         self.addrow()
 
-
     @screen
     def onerepmaxscreen(self):
         desctext = """
@@ -161,25 +160,30 @@ Epley's formula and Lander's formula
 
     @screen
     def displaydata(self):
-        data = [
-        QDateTime(2024, 2, 17, 8, 30),
-        QDateTime(2024, 2, 18, 9, 0),
-        QDateTime(2024, 2, 19, 10, 0),
-        QDateTime(2024, 2, 20, 11, 30),
-        QDateTime(2024, 2, 21, 12, 0)
-        ]
-        y_vals = [50, 60, 70, 65, 80]
+        self.workoutdata = self.getWorkoutData()
+        dates = list(self.workoutdata.loc[self.workoutdata["excercise"] == "Barbell Bench Press", "datetime"])
+        print(dates)
+        weights = list(self.workoutdata.loc[self.workoutdata["excercise"] == "Barbell Bench Press", "weight"])
+        print(weights)
         self.widgets = {
             "back" :    Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title" :   Text(self,"Display Data",(225,0),15),
-            "graph" :   ExerciseGraph(self,data,y_vals)
-            
+            "graph" :   ExerciseGraph(self,dates,weights),
+            "type" :    dropdownbox(self,["Volume", "Weight", "Speed","Distance", "Time"],(20,80)),
+            "excercise": LineEdit(self,"Excercise",(130,80))
         }
+        print(self.excercises.loc[self.excercises["category"]=="Cardio", "excercise"])
+        self.validExcercises = QCompleter(self.excercises["excercise"])
+        self.widgets["excercise"].setCompleter(self.validExcercises)
+        self.widgets["dropdownbox"]
         self.widgets["graph"].move(10,100)
     
     def getWorkoutData(self):
-        pass
-    
+        query = """SELECT  workouts.excercise, workouts.sets, workouts.reps, workouts.weight, workoutslink.datetime
+                   FROM workouts
+                   INNER JOIN workoutslink ON workoutslink.workoutID = workouts.workoutID
+                   WHERE workoutslink.userID = %s;""" % self.userID
+        return pandas.read_sql(query, self.connection)
     
     def colourpicker(self, element):
         color = QColorDialog.getColor().name()
@@ -264,10 +268,6 @@ Epley's formula and Lander's formula
             self.widgets["saveworkout"].notice(0.5, "Workout Saved", "Save Workout")
             self.widgets["saveworkout"].worker.finished.connect(self.addworkoutscreen)
             
-
-            
-    
-    
     def units_check(self, row):
         workoutrow = lambda: self.widgets["workoutbox"].scrollwidglist[row]
         if workoutrow()[0].text() in ["Run","Rowing Erg"]:
@@ -283,8 +283,6 @@ Epley's formula and Lander's formula
             workoutrow()[3].setText("")
             workoutrow()[3].show()
             
-            
-    
     def addrow(self):
         self.rowID += 1
         index = len(self.widgets["workoutbox"].scrollwidglist)-1
@@ -399,7 +397,7 @@ if __name__ == "__main__": # So that the script can't be executed indirectly
 
     sheettemplate = stylesheet
     
-    for key, value in defaultstyle.items():
+    for key, value in style.items():
         stylesheet = stylesheet.replace(key, value)
     app.setStyleSheet(stylesheet)
     window = Screen()

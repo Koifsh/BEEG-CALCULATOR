@@ -79,10 +79,11 @@ class CheckBox(QCheckBox):
         self.setFixedSize(200,42)
 
 class dropdownbox(QComboBox):
-    def __init__(self,window,options=list):
+    def __init__(self,window,options=list, position = None):
         super().__init__(window)
-        self.setFixedSize(200,50)
+        self.setFixedSize(100,50)
         self.addItems(options)
+        self.move(*position)
         
         
 
@@ -126,32 +127,29 @@ class ExerciseGraph(QWidget):
         layout.addWidget(self.canvas)
         self.setLayout(layout)
         self.setFixedSize(600,450)
-        # Convert x_vals to Python datetime objects
-        # Generate some random data for demonstration
-        self.generate()
-        
-    def generate(self):
-        # Plot the initial data with interpolation
-        self.x_vals = [val.toPyDateTime() for val in self.x_vals]
-        # Set background color
-        self.ax.set_facecolor('#1E1E1E')  # Charcoal
         self.figure.patch.set_facecolor('#1E1E1E')
-
-        # Set labels color
         self.ax.xaxis.label.set_color('#FFFFFF')  # Dark Gray
         self.ax.yaxis.label.set_color('#FFFFFF')  # Dark Gray
-        self.ax.set_xlabel('Date Time')
         self.ax.set_ylabel(f'Weight Lifted ({"lbs" if self.win.devicedata["measurement"] == "imperial" else "kgs"})')
-
-        # Set ticks color
+        self.ax.grid(True, color='#2A363B')  # Slate Gray
         self.ax.tick_params(axis='x', colors='#FFFFFF',rotation=15)  # Dark Gray
         self.ax.tick_params(axis='y', colors='#FFFFFF')  # Dark Gray
 
-        # Set grid color
-        self.ax.grid(True, color='#2A363B')  # Slate Gray
-
-        # Set fixed limits for x and y axes with extra space
+        # Convert x_vals to Python datetime objects
+        # Generate some random data for demonstration
+        if self.x_vals and self.y_vals:
+            self.generate()
+        else:
+            self.generate_no_data()
+        
+    def generate(self):
+        # Plot the initial data with interpolation
+        self.x_vals = [val for val in self.x_vals]
+        # Set background color
+        # Set labels color
+        self.ax.set_facecolor('#1E1E1E')
         margin = timedelta(days=1)  # Change the timedelta as needed
+        
         start_date = min(self.x_vals) - margin
         end_date = max(self.x_vals) + margin
         self.ax.set_xlim(start_date, end_date)
@@ -162,6 +160,14 @@ class ExerciseGraph(QWidget):
         self.graph, = self.ax.plot(self.x_vals, self.y_vals, marker='o', linestyle='-', color='#F76D57', linewidth=2)  # Coral
         self.canvas.draw()
         
+    def generate_no_data(self):
+        self.ax.text(0.5, 0.5, 'No Data', ha='center', va='center', fontsize=16,font="Consolas", color='#F76D57')
+        self.ax.set_facecolor('#3d3b3b')
+        # Remove x and y ticks for cleaner appearance
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+
+        self.canvas.draw()  # Draw the canvas to display the text
     
 
 
