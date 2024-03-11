@@ -30,7 +30,8 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         
         self.excercises = pandas.read_csv("./data/excercises.csv")
         # reads data about users and if no users are found create a new data file
-
+        self.strengthexcercises = self.excercises.loc[self.excercises["category"] == "Strength", "excercise"]
+        self.cardioexcercises = self.excercises.loc[self.excercises["category"] == "Cardio", "excercise"]
         self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata["deviceid"])))
         self.usernames = list(map(lambda x: x[0],list(self.connection.execute(sqlalchemy.text("SELECT username FROM users")))))
         if self.userID != []:
@@ -161,28 +162,66 @@ Epley's formula and Lander's formula
     @screen
     def displaydata(self):
         self.workoutdata = self.getWorkoutData()
-        dates = list(self.workoutdata.loc[self.workoutdata["excercise"] == "Barbell Bench Press", "datetime"])
-        print(dates)
-        weights = list(self.workoutdata.loc[self.workoutdata["excercise"] == "Barbell Bench Press", "weight"])
-        print(weights)
+        
+        workoutdata = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["datetime", "weight","reps","sets"]]
+        volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), workoutdata["weight"],workoutdata["reps"],workoutdata["sets"]))
+        print(volume)
+        print(workoutdata["datetime"])
         self.widgets = {
-            "back" :    Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
-            "title" :   Text(self,"Display Data",(225,0),15),
-            "graph" :   ExerciseGraph(self,dates,weights),
-            "type" :    dropdownbox(self,["Volume", "Weight", "Speed","Distance", "Time"],(20,80)),
-            "excercise": LineEdit(self,"Excercise",(130,80))
+            "back" :        Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
+            "title" :       Text(self,"Display Data",(225,0),15),
+            "graph" :       ExerciseGraph(self,workoutdata["datetime"],volume),
+            "type" :        dropdownbox(self,["Volume", "Weight", "Speed","Distance", "Time"],(20,80)),
+            "excercise":    LineEdit(self,"Excercise",(130,80)),
+            "generate" :    Button(self,"Generate",(340,80),(100,50))
         }
-        print(self.excercises.loc[self.excercises["category"]=="Cardio", "excercise"])
-        self.validExcercises = QCompleter(self.excercises["excercise"])
-        self.widgets["excercise"].setCompleter(self.validExcercises)
-        self.widgets["dropdownbox"]
+        self.dropdowntypechange()
         self.widgets["graph"].move(10,100)
+        self.widgets["type"].currentTextChanged.connect(self.dropdowntypechange)
+        
+    def dropdowntypechange(self):
+        match self.widgets["type"].currentText():
+            case "Volume" | "Weight":
+                self.validExcercises = QCompleter(self.excercises.loc[self.excercises["category"] == "Strength", "excercise"])
+            
+            case "Speed" | "Distance" | "Time":
+                self.validExcercises = QCompleter(self.excercises.loc[self.excercises["category"] == "Cardio", "excercise"])
+        self.validExcercises.setCaseSensitivity(Qt.CaseInsensitive)
+        self.validExcercises.setFilterMode(Qt.MatchContains)
+        self.widgets["excercise"].setCompleter(self.validExcercises)
+    
+    def generateGraph(self):
+        excercisetype = self.widgets["type"].currentText()
+        graph = lambda : self.widgets["graph"]
+        strengthexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["datetime", "weight","reps","sets"]]
+        cardioexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.cardioexcercises), ["datetime", "weight","reps","sets"]]
+        
+        match excercisetype:
+            case "Weight":
+                yaxislabel = f'{excercisetype} Lifted ({"lbs" if self.devicedata["measurement"] == "imperial" else "kgs"})'
+                data = strengthexcercises["datetime"],strengthexcercises["weight"]
+            case "Volume":
+                yaxislabel = f'{excercisetype} Lifted ({"lbs" if self.devicedata["measurement"] == "imperial" else "kgs"})'
+                volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), workoutdata["weight"],workoutdata["reps"],workoutdata["sets"]))
+                data = strengthexcercises["datetime"],volume
+            case "Speed":
+                yaxislabel = f'Speed ({"m/h" if self.devicedata["measurement"] == "imperial" else "km/h"})'
+                #speed = list(map(lambda ))
+            case "Distance":
+                yaxislabel = f'Distance ({"miles" if self.devicedata["measurement"] == "imperial" else "kilometers"})'
+            case "Time":
+                yaxislabel = f"Time spent (s)"
+        
+        graph().generate(yaxislabel)
+        
+        f'Weight Lifted ({"lbs" if self.win.devicedata["measurement"] == "imperial" else "kgs"})'
+    
     
     def getWorkoutData(self):
-        query = """SELECT  workouts.excercise, workouts.sets, workouts.reps, workouts.weight, workoutslink.datetime
+        query = sqlalchemy.text("""SELECT  workouts.excercise, workouts.sets, workouts.reps, workouts.weight, workoutslink.datetime
                    FROM workouts
                    INNER JOIN workoutslink ON workoutslink.workoutID = workouts.workoutID
-                   WHERE workoutslink.userID = %s;""" % self.userID
+                   WHERE workoutslink.userID = %s;""" % self.userID)
         return pandas.read_sql(query, self.connection)
     
     def colourpicker(self, element):
@@ -402,4 +441,4 @@ if __name__ == "__main__": # So that the script can't be executed indirectly
     app.setStyleSheet(stylesheet)
     window = Screen()
     window.show()
-    sys.exit(app.exec_()) # destroys the program to stop it running after the program has been bd.
+    sys.exit(app.exec_()) # destroys the program to stop it running after the progr
