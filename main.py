@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import (QMainWindow, QApplication)
 import sys,pandas, sqlalchemy
 from random import choice
-import json
+import json, datetime
 from functools import partial
 from tools import *
 
@@ -173,7 +173,7 @@ Epley's formula and Lander's formula
             "graph" :       ExerciseGraph(self,workoutdata["datetime"],volume),
             "type" :        dropdownbox(self,["Volume", "Weight", "Speed","Distance", "Time"],(20,80)),
             "excercise":    LineEdit(self,"Excercise",(130,80)),
-            "generate" :    Button(self,"Generate",(340,80),(100,50))
+            "generate" :    Button(self,"Generate",(340,80),(100,50),func=self.generateGraph)
         }
         self.dropdowntypechange()
         self.widgets["graph"].move(10,100)
@@ -192,29 +192,55 @@ Epley's formula and Lander's formula
     
     def generateGraph(self):
         excercisetype = self.widgets["type"].currentText()
+        excercisename = self.widgets["excercise"].text()
         graph = lambda : self.widgets["graph"]
-        strengthexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["datetime", "weight","reps","sets"]]
-        cardioexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.cardioexcercises), ["datetime", "weight","reps","sets"]]
-        
+        strengthexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
+        strengthexcercises["weight"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce")
+        strengthexcercises["reps"] = pandas.to_numeric(strengthexcercises["reps"], errors="coerce")
+        strengthexcercises["sets"] = pandas.to_numeric(strengthexcercises["sets"], errors="coerce")
+
+        # Calculate the "volume" column
+        strengthexcercises["volume"] = strengthexcercises["weight"] * strengthexcercises["reps"] * strengthexcercises["sets"]
+
+        #volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), strengthexcercises["weight"],strengthexcercises["reps"],strengthexcercises["sets"]))
+        cardioexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.cardioexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
+        # Convert "reps" to timedelta objects representing time duration
+        cardioexcercises["speed"] = cardioexcercises.apply(
+            lambda row: row["sets"] / (int(row["reps"].split(":")[0]) + int(row["reps"].split(":")[1]) / 60),
+            axis=1
+    )
+        strengthexcercises["volume"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce") * \
+                                       pandas.to_numeric(strengthexcercises["reps"], errors="coerce") * \
+                                        pandas.to_numeric(strengthexcercises["sets"], errors="coerce")
+        hasText = excercisename != ""
+        print("hastext", hasText, excercisename)
+        getExcerciseColumn = lambda category, column: category.loc[category["excercise"]==excercisetype, column]
         match excercisetype:
             case "Weight":
                 yaxislabel = f'{excercisetype} Lifted ({"lbs" if self.devicedata["measurement"] == "imperial" else "kgs"})'
-                data = strengthexcercises["datetime"],strengthexcercises["weight"]
+                data = (getExcerciseColumn(strengthexcercises,"datetime"),getExcerciseColumn(strengthexcercises,"weight")) if hasText else (strengthexcercises["datetime"],strengthexcercises["weight"])
             case "Volume":
                 yaxislabel = f'{excercisetype} Lifted ({"lbs" if self.devicedata["measurement"] == "imperial" else "kgs"})'
-                volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), workoutdata["weight"],workoutdata["reps"],workoutdata["sets"]))
-                data = strengthexcercises["datetime"],volume
+                #volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), strengthexcercises["weight"],strengthexcercises["reps"],strengthexcercises["sets"]))
+                data = (getExcerciseColumn(strengthexcercises, "datetime"),getExcerciseColumn(strengthexcercises, "volume")) if hasText else (strengthexcercises["datetime"],strengthexcercises["volume"])
             case "Speed":
                 yaxislabel = f'Speed ({"m/h" if self.devicedata["measurement"] == "imperial" else "km/h"})'
-                #speed = list(map(lambda ))
+                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "speed")) if hasText else (cardioexcercises["datetime"],cardioexcercises["speed"])
+
             case "Distance":
                 yaxislabel = f'Distance ({"miles" if self.devicedata["measurement"] == "imperial" else "kilometers"})'
+                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "sets")) if hasText else (cardioexcercises["datetime"],cardioexcercises["sets"])
+
             case "Time":
-                yaxislabel = f"Time spent (s)"
+                yaxislabel = "Time spent (s)"
+                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "reps")) if hasText else (cardioexcercises["datetime"],cardioexcercises["reps"])
+
+        print(data, len(data[0]))
+        if len(data[0]) == 0 or len(data[1]) == 0:
+            graph().generate_no_data()
+        else:
+            graph().generate(yaxislabel,data)
         
-        graph().generate(yaxislabel)
-        
-        f'Weight Lifted ({"lbs" if self.win.devicedata["measurement"] == "imperial" else "kgs"})'
     
     
     def getWorkoutData(self):

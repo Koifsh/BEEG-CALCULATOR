@@ -126,6 +126,18 @@ class ExerciseGraph(QWidget):
         layout.addWidget(self.canvas)
         self.setLayout(layout)
         self.setFixedSize(600,450)
+        
+
+        # Convert x_vals to Python datetime objects
+        # Generate some random data for demonstration
+        if 0 not in [len(x_vals),len(y_vals)]:
+            self.generate(f'Volume Lifted {"lbs" if self.win.devicedata["measurement"] == "imperial" else "kgs"}',(x_vals,y_vals))
+        else:
+            self.generate_no_data()
+        
+    def generate(self, yaxislabel,data):
+        print(data)
+        self.ax.clear()
         self.figure.patch.set_facecolor('#1E1E1E')
         self.ax.xaxis.label.set_color('#FFFFFF')  # Dark Gray
         self.ax.yaxis.label.set_color('#FFFFFF')  # Dark Gray
@@ -133,16 +145,7 @@ class ExerciseGraph(QWidget):
         self.ax.grid(True, color='#2A363B')  # Slate Gray
         self.ax.tick_params(axis='x', colors='#FFFFFF',rotation=15)  # Dark Gray
         self.ax.tick_params(axis='y', colors='#FFFFFF')  # Dark Gray
-
-        # Convert x_vals to Python datetime objects
-        # Generate some random data for demonstration
-        if 0 not in [len(x_vals),len(y_vals)]:
-            self.generate(f'Volume Lifted {"lbs" if self.win.devicedata["measurement"] == "imperial" else "kgs"}',x_vals,y_vals)
-        else:
-            self.generate_no_data()
-        
-    def generate(self, yaxislabel,x_vals, y_vals):
-        self.x_vals, self.y_vals = self.takeMax(zip(x_vals,y_vals))
+        self.x_vals, self.y_vals = self.takeMax(zip(*data))
         # Set background color
         # Set labels color
         self.ax.set_facecolor('#1E1E1E')
@@ -153,7 +156,7 @@ class ExerciseGraph(QWidget):
         self.ax.set_xlim(start_date, end_date)
 
         # Set y-axis limit
-        self.ax.set_ylim(0, max(self.y_vals) + max(y_vals)//10)  # Adjust the limits according to your data
+        self.ax.set_ylim(0, max(self.y_vals) + max(self.y_vals)//10)  # Adjust the limits according to your data
         
         self.graph, = self.ax.plot(self.x_vals, self.y_vals, marker='o', linestyle='-', color='#F76D57', linewidth=2)  # Coral
         self.canvas.draw()
@@ -169,6 +172,7 @@ class ExerciseGraph(QWidget):
         return maxData.keys(), maxData.values()
     
     def generate_no_data(self):
+        self.ax.clear()
         self.ax.text(0.5, 0.5, 'No Data', ha='center', va='center', fontsize=16,font="Consolas", color='#F76D57')
         self.ax.set_facecolor('#3d3b3b')
         # Remove x and y ticks for cleaner appearance
