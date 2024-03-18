@@ -135,7 +135,6 @@ Epley's formula and Lander's formula
         self.widgets["weight"].setValidator(QIntValidator())
         self.widgets["reps"].setValidator(QIntValidator())
     
-    
     @screen
     def optionsscreen(self):
         self.widgets = {
@@ -195,18 +194,24 @@ Epley's formula and Lander's formula
         excercisename = self.widgets["excercise"].text()
         graph = lambda : self.widgets["graph"]
         strengthexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
-        strengthexcercises["weight"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce")
-        strengthexcercises["reps"] = pandas.to_numeric(strengthexcercises["reps"], errors="coerce")
-        strengthexcercises["sets"] = pandas.to_numeric(strengthexcercises["sets"], errors="coerce")
-
+        strengthexcercises["weight"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce") * (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
+        strengthexcercises["reps"] = pandas.to_numeric(strengthexcercises["reps"], errors="coerce")* (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
+        strengthexcercises["sets"] = pandas.to_numeric(strengthexcercises["sets"], errors="coerce")* (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
+        cardioexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.cardioexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
+        cardioexcercises["sets"] = pandas.to_numeric(cardioexcercises["sets"], errors="coerce")* (0.62137119 if self.devicedata["measurement"] == "imperial" else 1)
         # Calculate the "volume" column
         strengthexcercises["volume"] = strengthexcercises["weight"] * strengthexcercises["reps"] * strengthexcercises["sets"]
 
         #volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), strengthexcercises["weight"],strengthexcercises["reps"],strengthexcercises["sets"]))
-        cardioexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.cardioexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
+        
         # Convert "reps" to timedelta objects representing time duration
-        cardioexcercises["speed"] = cardioexcercises.apply(
-            lambda row: row["sets"] / (int(row["reps"].split(":")[0]) + int(row["reps"].split(":")[1]) / 60),
+        cardioexcercises["time"] = cardioexcercises.apply(
+            lambda row: int(row["reps"].split(":")[0])*60 + int(row["reps"].split(":")[1]),
+            axis=1
+        )
+        
+        cardioexcercises["split"] = cardioexcercises.apply(
+            lambda row: row["time"] / row["sets"],
             axis=1
     )
         strengthexcercises["volume"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce") * \
@@ -214,7 +219,7 @@ Epley's formula and Lander's formula
                                         pandas.to_numeric(strengthexcercises["sets"], errors="coerce")
         hasText = excercisename != ""
         print("hastext", hasText, excercisename)
-        getExcerciseColumn = lambda category, column: category.loc[category["excercise"]==excercisetype, column]
+        getExcerciseColumn = lambda category, column: category.loc[category["excercise"]==excercisename, column]
         match excercisetype:
             case "Weight":
                 yaxislabel = f'{excercisetype} Lifted ({"lbs" if self.devicedata["measurement"] == "imperial" else "kgs"})'
@@ -224,16 +229,16 @@ Epley's formula and Lander's formula
                 #volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), strengthexcercises["weight"],strengthexcercises["reps"],strengthexcercises["sets"]))
                 data = (getExcerciseColumn(strengthexcercises, "datetime"),getExcerciseColumn(strengthexcercises, "volume")) if hasText else (strengthexcercises["datetime"],strengthexcercises["volume"])
             case "Speed":
-                yaxislabel = f'Speed ({"m/h" if self.devicedata["measurement"] == "imperial" else "km/h"})'
-                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "speed")) if hasText else (cardioexcercises["datetime"],cardioexcercises["speed"])
+                yaxislabel = f'Time (min) per ({"mile" if self.devicedata["measurement"] == "imperial" else "km"})'
+                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "split")) if hasText else (cardioexcercises["datetime"],cardioexcercises["split"])
 
             case "Distance":
                 yaxislabel = f'Distance ({"miles" if self.devicedata["measurement"] == "imperial" else "kilometers"})'
                 data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "sets")) if hasText else (cardioexcercises["datetime"],cardioexcercises["sets"])
 
             case "Time":
-                yaxislabel = "Time spent (s)"
-                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "reps")) if hasText else (cardioexcercises["datetime"],cardioexcercises["reps"])
+                yaxislabel = "Time spent (mins)"
+                data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "time")) if hasText else (cardioexcercises["datetime"],cardioexcercises["time"])
 
         print(data, len(data[0]))
         if len(data[0]) == 0 or len(data[1]) == 0:
@@ -241,8 +246,6 @@ Epley's formula and Lander's formula
         else:
             graph().generate(yaxislabel,data)
         
-    
-    
     def getWorkoutData(self):
         query = sqlalchemy.text("""SELECT  workouts.excercise, workouts.sets, workouts.reps, workouts.weight, workoutslink.datetime
                    FROM workouts
@@ -277,7 +280,6 @@ Epley's formula and Lander's formula
         onerep = (weight/(1.0278-0.0278*reps) + weight*(1 + 0.0333 * reps) + (100*weight)/(101.3 - 2.67123 * reps))/3
         self.widgets["estimate"].setText(f"{onerep:.2f}")
         
-
     def update(self):
         for key, widget in self.widgets.items():
             print(key) # To check what widgets have been loaded
@@ -432,7 +434,6 @@ Epley's formula and Lander's formula
             self.widgets["password"].setEchoMode(QLineEdit.Password)
             self.widgets["showpassword"].setText("Show")
     
-        
     def logout(self):
         self.connection.execute(sqlalchemy.text("DELETE FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata['deviceid']))
         self.startscreen()
