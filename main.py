@@ -450,7 +450,7 @@ defaultstyle = {
     "seccol" : "#F76D57",
     "accent" : "#2A363B",
     "bgcol" : "#1E1E1E",
-    "textcol" : "white",
+    "textcol" : "FFFFFF",
 }
 
 if __name__ == "__main__": # So that the script can't be executed indirectly
