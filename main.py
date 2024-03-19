@@ -27,8 +27,10 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
             self.devicedata = {"deviceid": deviceid,"measurement": "metric"}
             with open("./data/data.json","x") as data:
                 json.dump(self.devicedata, data)
-        
         self.excercises = pandas.read_csv("./data/excercises.csv")
+        
+        
+        
         # reads data about users and if no users are found create a new data file
         self.strengthexcercises = self.excercises.loc[self.excercises["category"] == "Strength", "excercise"]
         self.cardioexcercises = self.excercises.loc[self.excercises["category"] == "Cardio", "excercise"]
