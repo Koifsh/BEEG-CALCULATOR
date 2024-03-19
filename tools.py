@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QPushButton, QLineEdit, QLabel, QCheckBox, QComboBox, QGroupBox, QScrollArea, QGridLayout, QWidget, QVBoxLayout, )
+from PyQt5.QtGui import (QFont,)
+from PyQt5.QtCore import (QThread, pyqtSignal,Qt, )
 from time import sleep
 from datetime import timedelta
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import subplots
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 # from threading import Thread
 
@@ -120,7 +120,7 @@ class ExerciseGraph(QWidget):
         super().__init__(win)
         # Create a Matplotlib figure and axis
         self.win = win
-        self.figure, self.ax = plt.subplots(figsize=(6,3))
+        self.figure, self.ax = subplots(figsize=(6,3))
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout()
         layout.addWidget(self.canvas)
@@ -180,21 +180,3 @@ class ExerciseGraph(QWidget):
 
         self.canvas.draw()  # Draw the canvas to display the text
     
-
-
-    
-
-
-class Progressbar(QProgressBar):
-    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
-        super().__init__(window)
-        self.win = window
-        self.setMinimum(min)
-        self.setMaximum(max)
-        self.move(*pos)
-        self.setFixedSize(180,30)
-        self.setFormat(text)
-        
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(quit())

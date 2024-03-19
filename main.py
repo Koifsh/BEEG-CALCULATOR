@@ -1,8 +1,11 @@
 # import libraries
-from PyQt5.QtWidgets import (QMainWindow, QApplication)
-import sys,pandas, sqlalchemy
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QCompleter, QColorDialog)
+from PyQt5.QtGui import (QIntValidator,)
+from sys import (argv, exit as sysexit)
+from pandas import (read_csv, to_numeric, read_sql, DataFrame, Series)
+from sqlalchemy import (create_engine, text)
 from random import choice
-import json, datetime
+from json import (load, dump, dumps)
 from functools import partial
 from tools import *
 
@@ -13,32 +16,32 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets = {}
         self.setFixedSize(600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
-        self.engine = sqlalchemy.create_engine(url="mysql+pymysql://y12_23_kaiEPQ:%Sj58q5b7@77.68.35.85:3306/y12_23_kaiEPQ")
+        self.engine = create_engine(url="mysql+pymysql://y12_23_kaiEPQ:%Sj58q5b7@77.68.35.85:3306/y12_23_kaiEPQ")
         self.connection = self.engine.connect()
         
         try:
             with open("./data/data.json", "r") as data:
-                self.devicedata = json.load(data)
+                self.devicedata = load(data)
         except FileNotFoundError:
             deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
-            devicelist = list(self.connection.execute(sqlalchemy.text("SELECT deviceID FROM deviceToUser")))[0]
+            devicelist = list(self.connection.execute(text("SELECT deviceID FROM deviceToUser")))[0]
             while deviceid in devicelist:
                 deviceid = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
             self.devicedata = {"deviceid": deviceid,"measurement": "metric"}
             with open("./data/data.json","x") as data:
-                json.dump(self.devicedata, data)
-        self.excercises = pandas.read_csv("./data/excercises.csv")
+                dump(self.devicedata, data)
+        self.excercises = read_csv("./data/excercises.csv")
         
         
         
         # reads data about users and if no users are found create a new data file
         self.strengthexcercises = self.excercises.loc[self.excercises["category"] == "Strength", "excercise"]
         self.cardioexcercises = self.excercises.loc[self.excercises["category"] == "Cardio", "excercise"]
-        self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata["deviceid"])))
-        self.usernames = list(map(lambda x: x[0],list(self.connection.execute(sqlalchemy.text("SELECT username FROM users")))))
+        self.userID = list(self.connection.execute(text("SELECT userID FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata["deviceid"])))
+        self.usernames = list(map(lambda x: x[0],list(self.connection.execute(text("SELECT username FROM users")))))
         if self.userID != []:
             self.userID = self.userID[0][0]
-            _,self.username,_ = list(self.connection.execute(sqlalchemy.text("SELECT * FROM users WHERE userID = '%s'" % self.userID)))[0]
+            _,self.username,_ = list(self.connection.execute(text("SELECT * FROM users WHERE userID = '%s'" % self.userID)))[0]
             print(self.username, self.userID)
             self.mainscreen()
         else:
@@ -166,8 +169,6 @@ Epley's formula and Lander's formula
         
         workoutdata = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["datetime", "weight","reps","sets"]]
         volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), workoutdata["weight"],workoutdata["reps"],workoutdata["sets"]))
-        print(volume)
-        print(workoutdata["datetime"])
         self.widgets = {
             "back" :        Button(self,"Back",(10,10),(100,50),func=self.mainscreen),
             "title" :       Text(self,"Display Data",(225,0),15),
@@ -196,31 +197,33 @@ Epley's formula and Lander's formula
         excercisename = self.widgets["excercise"].text()
         graph = lambda : self.widgets["graph"]
         strengthexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.strengthexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
-        strengthexcercises["weight"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce") * (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
-        strengthexcercises["reps"] = pandas.to_numeric(strengthexcercises["reps"], errors="coerce")* (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
-        strengthexcercises["sets"] = pandas.to_numeric(strengthexcercises["sets"], errors="coerce")* (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
+        strengthexcercises["weight"] = to_numeric(strengthexcercises["weight"], errors="coerce") * (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
+        strengthexcercises["reps"] = to_numeric(strengthexcercises["reps"], errors="coerce")* (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
+        strengthexcercises["sets"] = to_numeric(strengthexcercises["sets"], errors="coerce")* (2.2046226218 if self.devicedata["measurement"] == "imperial" else 1)
         cardioexcercises = self.workoutdata.loc[self.workoutdata["excercise"].isin(self.cardioexcercises), ["excercise","datetime", "weight","reps","sets"]].copy()
-        cardioexcercises["sets"] = pandas.to_numeric(cardioexcercises["sets"], errors="coerce")* (0.62137119 if self.devicedata["measurement"] == "imperial" else 1)
+        cardioexcercises["sets"] = to_numeric(cardioexcercises["sets"], errors="coerce")* (0.62137119 if self.devicedata["measurement"] == "imperial" else 1)
         # Calculate the "volume" column
         strengthexcercises["volume"] = strengthexcercises["weight"] * strengthexcercises["reps"] * strengthexcercises["sets"]
-
-        #volume = list(map((lambda weight,reps,sets : int(weight) * int(reps) * int(sets)), strengthexcercises["weight"],strengthexcercises["reps"],strengthexcercises["sets"]))
-        
-        # Convert "reps" to timedelta objects representing time duration
-        cardioexcercises["time"] = cardioexcercises.apply(
-            lambda row: int(row["reps"].split(":")[0])*60 + int(row["reps"].split(":")[1]),
-            axis=1
-        )
-        
-        cardioexcercises["split"] = cardioexcercises.apply(
-            lambda row: row["time"] / row["sets"],
-            axis=1
-    )
-        strengthexcercises["volume"] = pandas.to_numeric(strengthexcercises["weight"], errors="coerce") * \
-                                       pandas.to_numeric(strengthexcercises["reps"], errors="coerce") * \
-                                        pandas.to_numeric(strengthexcercises["sets"], errors="coerce")
+        print(cardioexcercises)
+        if len(cardioexcercises) != 0:
+            cardioexcercises["time"] = cardioexcercises.apply(
+                lambda row: int(row["reps"].split(":")[0])*60 + int(row["reps"].split(":")[1]),
+                axis=1
+            )
+            
+            cardioexcercises["split"] = cardioexcercises.apply(
+                lambda row: row["time"] / row["sets"],
+                axis=1
+            )
+        else:
+            cardioexcercises["time"] = Series(dtype="int")
+            cardioexcercises["split"] = Series(dtype="float")
+            
+        strengthexcercises["volume"] = to_numeric(strengthexcercises["weight"], errors="coerce") * \
+                                       to_numeric(strengthexcercises["reps"], errors="coerce") * \
+                                        to_numeric(strengthexcercises["sets"], errors="coerce")
         hasText = excercisename != ""
-        print("hastext", hasText, excercisename)
+
         getExcerciseColumn = lambda category, column: category.loc[category["excercise"]==excercisename, column]
         match excercisetype:
             case "Weight":
@@ -242,18 +245,17 @@ Epley's formula and Lander's formula
                 yaxislabel = "Time spent (mins)"
                 data = (getExcerciseColumn(cardioexcercises, "datetime"),getExcerciseColumn(cardioexcercises, "time")) if hasText else (cardioexcercises["datetime"],cardioexcercises["time"])
 
-        print(data, len(data[0]))
         if len(data[0]) == 0 or len(data[1]) == 0:
             graph().generate_no_data()
         else:
             graph().generate(yaxislabel,data)
         
     def getWorkoutData(self):
-        query = sqlalchemy.text("""SELECT  workouts.excercise, workouts.sets, workouts.reps, workouts.weight, workoutslink.datetime
+        query = text("""SELECT  workouts.excercise, workouts.sets, workouts.reps, workouts.weight, workoutslink.datetime
                    FROM workouts
                    INNER JOIN workoutslink ON workoutslink.workoutID = workouts.workoutID
                    WHERE workoutslink.userID = %s;""" % self.userID)
-        return pandas.read_sql(query, self.connection)
+        return read_sql(query, self.connection)
     
     def colourpicker(self, element):
         color = QColorDialog.getColor().name()
@@ -262,7 +264,7 @@ Epley's formula and Lander's formula
         for key,value in style.items():
             stylesheet = stylesheet.replace(key,value)
         app.setStyleSheet(stylesheet)
-        jsonstyle = json.dumps(style)
+        jsonstyle = dumps(style)
         with open("styles/defaultstyle.json", "w") as jsonfile:
             jsonfile.write(jsonstyle)
     
@@ -273,7 +275,7 @@ Epley's formula and Lander's formula
             stylesheet = stylesheet.replace(key,value)
             
         app.setStyleSheet(stylesheet)
-        jsonstyle = json.dumps(style)
+        jsonstyle = dumps(style)
         with open("styles/defaultstyle.json", "w") as jsonfile:
             jsonfile.write(jsonstyle)
     
@@ -284,12 +286,9 @@ Epley's formula and Lander's formula
         
     def update(self):
         for key, widget in self.widgets.items():
-            print(key) # To check what widgets have been loaded
             widget.show()
-        print()
     
     def clearscreen(self):# This clears the screen and ensures that it has been deleted from the widget dictionary
-        print("screen cleared")
         for value in self.widgets.values():
             value.setParent(None) # deletes the widget from the screen
         self.widgets = {} # deletes the entire widget dictionary
@@ -307,30 +306,24 @@ Epley's formula and Lander's formula
         self.widgets["Metric System"].setText(f"Measurement: {self.devicedata['measurement']}")
         self.widgets["Metric System"].show()
         with open("./data/data.json","w") as f:
-            json.dump(self.devicedata, f)
+            dump(self.devicedata, f)
     
     def saveworkout(self):
         workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
-        workoutlist = list(self.connection.execute(sqlalchemy.text("SELECT workoutID FROM workoutslink")))#
-        print(workoutlist)
+        workoutlist = list(self.connection.execute(text("SELECT workoutID FROM workoutslink")))#
         while workoutID in workoutlist:
                 workoutID = "".join(list(choice("1234567890qwertyuiopasdfghjklzxcvbnm") for _ in range(9)))
         data = list(map(lambda i: [workoutID,i[0].text(),i[1].text(),i[2].text(),i[3].text()],self.widgets["workoutbox"].scrollwidglist[:-1]))
-        print(data)
         filtereddata = list(filter(lambda x : all(i != "" and i != "Not selected" for i in x),data))
-        print(self.excercises["excercise"])
-        print("Wide-Grip Push-Up" in filtereddata)
         if filtereddata != data:
             self.widgets["saveworkout"].notice(0.5, "Remove Empty Rows", "Save Workout") 
         else:
             if self.devicedata["measurement"] != "metric":
-                print("eyup")
                 data = map(lambda x:[x[0],x[1],x[2],x[3],round((float(x[4])*0.453592),2)], data)
             
-            self.connection.execute(sqlalchemy.text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
+            self.connection.execute(text("INSERT INTO workoutslink (workoutID,userID) VALUE ('%s','%s')" % (workoutID,self.userID)))
             
-            print(workoutID)
-            workoutdata = pandas.DataFrame(data,columns=["workoutID","excercise","sets","reps","weight"])
+            workoutdata = DataFrame(data,columns=["workoutID","excercise","sets","reps","weight"])
             workoutdata.to_sql(name="workouts",con=self.connection,if_exists="append",index=False)
             self.connection.commit()
             
@@ -400,13 +393,13 @@ Epley's formula and Lander's formula
             self.widgets["submit"].notice(0.5,"Username does not exist","Submit")
             return
 
-        if list(self.connection.execute(sqlalchemy.text("SELECT password FROM users WHERE username = '%s'" % username)))[0][0] != password: #Checks if the password doesnt match
+        if list(self.connection.execute(text("SELECT password FROM users WHERE username = '%s'" % username)))[0][0] != password: #Checks if the password doesnt match
             self.widgets["submit"].notice(0.5,"Password incorrect","Submit")
             return
         
-        self.userID = list(self.connection.execute(sqlalchemy.text("SELECT userID FROM users WHERE username = '%s'" % username)))[0][0]
+        self.userID = list(self.connection.execute(text("SELECT userID FROM users WHERE username = '%s'" % username)))[0][0]
         if self.widgets["RememberMe"].isChecked():
-            self.connection.execute(sqlalchemy.text("INSERT INTO deviceToUser (deviceID, userID) VALUES ('%s','%s')" % (self.devicedata['deviceid'],self.userID)))
+            self.connection.execute(text("INSERT INTO deviceToUser (deviceID, userID) VALUES ('%s','%s')" % (self.devicedata['deviceid'],self.userID)))
         self.username = username
         self.mainscreen()
         
@@ -419,7 +412,7 @@ Epley's formula and Lander's formula
                 self.widgets["submit"].notice(0.5,"Username already exists","Submit")
             else:
                 # Appends the new user and password into the dataframe
-                self.connection.execute(sqlalchemy.text("INSERT INTO users (username,password) VALUES ('%s','%s')" % (username,password) ))
+                self.connection.execute(text("INSERT INTO users (username,password) VALUES ('%s','%s')" % (username,password) ))
                 self.username = username
                 self.widgets["submit"].notice(0.5,"User created","Submit")
                 self.connection.commit()
@@ -437,7 +430,7 @@ Epley's formula and Lander's formula
             self.widgets["showpassword"].setText("Show")
     
     def logout(self):
-        self.connection.execute(sqlalchemy.text("DELETE FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata['deviceid']))
+        self.connection.execute(text("DELETE FROM deviceToUser WHERE deviceID = '%s'" % self.devicedata['deviceid']))
         self.startscreen()
         
     def closeEvent(self, event):
@@ -456,12 +449,12 @@ defaultstyle = {
 }
 
 if __name__ == "__main__": # So that the script can't be executed indirectly
-    app = QApplication(sys.argv) # Initializes the application
+    app = QApplication(argv) # Initializes the application
      # initializes the window by instantiating the screen class
     with open("./styles/style.css", "r") as file:
         stylesheet = str(file.read())
     with open("./styles/defaultstyle.json","r") as file:
-        style = json.load(file)
+        style = load(file)
 
     sheettemplate = stylesheet
     
@@ -470,4 +463,4 @@ if __name__ == "__main__": # So that the script can't be executed indirectly
     app.setStyleSheet(stylesheet)
     window = Screen()
     window.show()
-    sys.exit(app.exec_()) # destroys the program to stop it running after the progr
+    sysexit(app.exec_()) # destroys the pr
