@@ -1,6 +1,6 @@
 To download the executable go to:
 
-[https://drive.google.com/file/d/1XhgIQNhcCLpjUb_y79Xss_yisOy2ZOy_/view?usp=sharing](https://drive.google.com/file/d/1Xk7AByDpflcpW-ce5oETUqFx-ywkWJbu/view?usp=drive_link)
+https://drive.google.com/file/d/1Dn-YohAdSeJitf8Ryf9b3722ARnZHzFl/view?usp=drive_link
 
 FEATURES:
 - GUI
