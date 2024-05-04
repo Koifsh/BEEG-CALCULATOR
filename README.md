@@ -1,7 +1,5 @@
-To download the executable go to:
 
-[https://drive.google.com/file/d/12lkujxI3X0L_AWdHIidQ-CzOLWL2LDCa/view?usp=sharing](https://drive.google.com/file/d/1NHgYhHGHflMCOXP6vIIaKJh3fcTfdwEc/view?usp=sharing)
-
+Click the release on the right hand side
 Extract the package and open main.exe (don't worry if a windows popup comes up, I promise I wont hack you)
 
 
