@@ -16,8 +16,11 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
         self.widgets = {}
         self.setFixedSize(600,600) # set the position and the size
         self.setWindowTitle("Fitness Calculator") # set the title
-        self.engine = create_engine(url="mysql+pymysql://y12_23_kaiEPQ:%Sj58q5b7@77.68.35.85:3306/y12_23_kaiEPQ")
-        self.connection = self.engine.connect()
+        try:
+            self.engine = create_engine(url="mssql+pyodbc://@DESKTOP-0NOJ4VA/epq?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes")
+            self.connection = self.engine.connect()
+        except:
+            print("Error connecting to the database")
         
         try:
             with open("./data/data.json", "r") as data:
@@ -66,6 +69,7 @@ class Screen(QMainWindow): # create a class that is a subclass of the pyqt5 widg
     
     @screen
     def mainscreen(self):
+        print(style)
         # Creates a blank screen and then loads 3 widgets onto the screeb - this is the main screen 
         self.widgets = {
             "title":        Text(self,"Main Menu",(200,0),20),
@@ -445,7 +449,7 @@ defaultstyle = {
     "seccol" : "#F76D57",
     "accent" : "#2A363B",
     "bgcol" : "#1E1E1E",
-    "textcol" : "FFFFFF",
+    "textcol" : "white",
 }
 
 if __name__ == "__main__": # So that the script can't be executed indirectly
